@@ -1,0 +1,60 @@
+service: slack-dispatcher-service
+
+custom:
+  mySnsTopic: "${self:service}-${self:provider.stage}-register"
+  mySnsTopicArn:
+    dev:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.mySnsTopic}",
+            ],
+          ],
+      }
+    prod:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.mySnsTopic}",
+            ],
+          ],
+      }
+
+provider:
+  profile: release-bot
+  name: aws
+  runtime: nodejs8.10
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - SNS:Publish
+      Resource: "*"
+
+# TODO: Remove this from here. We should create the sns topics in the consumers, not the publishers.
+# TODO: For consumers, use filters: https://serverless.com/framework/docs/providers/aws/events/sns#setting-a-filter-policy
+resources: # CloudFormation template syntax
+  Resources:
+    registerTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:custom.mySnsTopic}
+
+functions:
+  dispatcher:
+    handler: handler.dispatcher
+    events:
+      - http:
+          path: slack/dispatcher
+          method: post
+          integration: lambda
+    environment:
+      mySnsTopicArn: ${self:custom.mySnsTopicArn.${self:provider.stage}}
+      myRegion: ${opt:region, 'us-east-1'}
