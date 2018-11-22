@@ -28,7 +28,7 @@ async function dispatchEvent(input) {
 
 async function handleRegisterCommand(userToRegister, input) {
   if (userToRegister === undefined) {
-    return "you must provide a user to be registered";
+    return "You must provide a user to be registered";
   }
   let messageData = prepareEventMessage({ ...input, userToRegister });
   console.info("publishing message:", messageData);
