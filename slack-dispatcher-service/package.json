@@ -1,0 +1,18 @@
+{
+  "name": "slack-dispatcher-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "handler.js",
+  "scripts": {
+    "offline": "sls offline start --stage local"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "aws-sdk": "^2.361.0",
+    "serverless-offline": "^3.31.3"
+  },
+  "dependencies": {
+    "serverless-offline-sns": "^0.49.0"
+  }
+}
