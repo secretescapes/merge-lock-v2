@@ -22,7 +22,7 @@ async function dispatchEvent(input) {
     case "register":
       return handleRegisterCommand(args[0], input);
     default:
-      return `unknown command ${command}`;
+      return `Unknown command ${command}`;
   }
 }
 
