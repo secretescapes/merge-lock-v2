@@ -12,9 +12,9 @@ custom:
     # host: 0.0.0.0 # Optional, defaults to 127.0.0.1 if not provided to serverless-offline
     # sns-endpoint: http://127.0.0.1:4567 # Optional. Only if you want to use a custom endpoint
     # accountId: 123456789012 # Optional
-  mySnsTopic: "${self:service}-${self:provider.stage}-register"
-  mySnsTopicArn:
-    local: "arn:aws:sns:us-east-1:123456789012:${self:custom.mySnsTopic}"
+  registerTopic: "${self:service}-${self:provider.stage}-register"
+  registerTopicArn:
+    local: "arn:aws:sns:us-east-1:123456789012:${self:custom.registerTopic}"
     dev:
       {
         "Fn::Join":
@@ -23,7 +23,7 @@ custom:
             [
               "arn:aws:sns:${self:provider.region}:",
               { "Ref": "AWS::AccountId" },
-              ":${self:custom.mySnsTopic}",
+              ":${self:custom.registerTopic}",
             ],
           ],
       }
@@ -35,7 +35,7 @@ custom:
             [
               "arn:aws:sns:${self:provider.region}:",
               { "Ref": "AWS::AccountId" },
-              ":${self:custom.mySnsTopic}",
+              ":${self:custom.registerTopic}",
             ],
           ],
       }
@@ -58,7 +58,7 @@ resources: # CloudFormation template syntax
     registerTopic:
       Type: AWS::SNS::Topic
       Properties:
-        TopicName: ${self:custom.mySnsTopic}
+        TopicName: ${self:custom.registerTopic}
 
 functions:
   dispatcher:
@@ -69,5 +69,5 @@ functions:
           method: post
           integration: lambda
     environment:
-      mySnsTopicArn: ${self:custom.mySnsTopicArn.${self:provider.stage}}
+      registerTopicArn: ${self:custom.registerTopicArn.${self:provider.stage}}
       myRegion: ${opt:region, 'us-east-1'}

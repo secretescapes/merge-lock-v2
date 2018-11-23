@@ -44,7 +44,7 @@ async function handleRegisterCommand(userToRegister, input) {
 function prepareEventMessage(messageJson) {
   return {
     Message: JSON.stringify(messageJson),
-    TopicArn: process.env.mySnsTopicArn
+    TopicArn: process.env.registerTopicArn
   };
 }
 
