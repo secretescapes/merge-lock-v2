@@ -6,11 +6,16 @@ module.exports.dispatcher = async event => {
   const response_url = event.body.response_url;
   const textArray = event.body.text.split(" ");
   const channel_name = event.body.channel_name;
+  const slack_user = {
+    username: event.body.user_name,
+    user_id: event.body.user_id
+  };
 
   const response = await dispatchEvent({
     response_url,
     textArray,
-    channel_name
+    channel_name,
+    slack_user
   });
 
   return { text: response };
@@ -20,17 +25,20 @@ async function dispatchEvent(input) {
   const [command, ...args] = input.textArray;
   switch (command) {
     case "register":
-      return handleRegisterCommand(args[0], input);
+      if (args[0] !== "me") {
+        return "Please use /register me [github username]";
+      }
+      return handleRegisterCommand(args[1], input);
     default:
       return `Unknown command ${command}`;
   }
 }
 
-async function handleRegisterCommand(userToRegister, input) {
-  if (userToRegister === undefined) {
+async function handleRegisterCommand(githubUsername, input) {
+  if (githubUsername === undefined) {
     return "You must provide a user to be registered";
   }
-  let messageData = prepareEventMessage({ ...input, userToRegister });
+  let messageData = prepareEventMessage({ ...input, githubUsername });
   console.info("publishing message:", messageData);
   try {
     await publishEvent(messageData);
