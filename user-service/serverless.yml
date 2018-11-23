@@ -1,8 +1,9 @@
-service: slack-dispatcher-service
+service: user-service # NOTE: update this with your service name
 
 plugins:
   - serverless-offline
   - serverless-offline-sns
+  - serverless-pseudo-parameters
 
 custom:
   serverless-offline-sns:
@@ -50,23 +51,8 @@ provider:
         - SNS:Publish
       Resource: "*"
 
-# TODO: Remove this from here. We should create the sns topics in the consumers, not the publishers.
-# TODO: For consumers, use filters: https://serverless.com/framework/docs/providers/aws/events/sns#setting-a-filter-policy
-resources: # CloudFormation template syntax
-  Resources:
-    registerTopic:
-      Type: AWS::SNS::Topic
-      Properties:
-        TopicName: ${self:custom.registerTopic}
-
 functions:
-  dispatcher:
-    handler: handler.dispatcher
+  register:
+    handler: handler.register
     events:
-      - http:
-          path: slack/dispatcher
-          method: post
-          integration: lambda
-    environment:
-      registerTopicArn: ${self:custom.registerTopicArn.${self:provider.stage}}
-      myRegion: ${opt:region, 'us-east-1'}
+      - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.registerTopic}
