@@ -4,12 +4,8 @@ const AWS = require("aws-sdk");
 module.exports.register = async (event, context, callback) => {
   console.log(JSON.stringify(event));
   const messages = event.Records.map(record => JSON.parse(record.Sns.Message));
-  await processMessage(messages[0]);
-  // messages.forEach(message => await processMessage(message, callback));
-
+  await Promise.all(messages.map(processMessage));
   return;
-  // Use this code if you don't use the http event with the LAMBDA-PROXY integration
-  // return { message: 'Go Serverless v1.0! Your function executed successfully!', event };
 };
 
 async function processMessage(message) {
@@ -21,7 +17,20 @@ async function processMessage(message) {
     region: process.env.myRegion
   };
   let dynamodb = new AWS.DynamoDB(dynamoDBOpts);
-  var params = {
+  var params = prepareItem(slackUsername, githubUsername, tableName);
+
+  try {
+    console.log(`Storing item: ${JSON.stringify(params)}`);
+    await dynamodb.putItem(params).promise();
+    console.log(`Item stored`);
+    //TODO: Send message with error/success
+  } catch (err) {
+    console.error(`Error storing to dynamodb: ${err}`);
+  }
+}
+
+function prepareItem(slackUsername, githubUsername, tableName) {
+  return {
     Item: {
       username: {
         S: `<@${slackUsername.user_id}|${slackUsername.username}>`
@@ -32,14 +41,4 @@ async function processMessage(message) {
     },
     TableName: `${tableName}`
   };
-
-  try {
-    console.log(`About to store: ${JSON.stringify(params)}`);
-    const a = await dynamodb.putItem(params).promise();
-    console.log(JSON.stringify(a));
-    console.log(`Stored!`);
-  } catch (err) {
-    console.error(`Error storing to dynamodb: ${err}`);
-  }
-  console.log("AFTER");
 }
