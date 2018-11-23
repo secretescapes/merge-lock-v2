@@ -1,0 +1,22 @@
+{
+  "Records": [
+    {
+      "EventSource": "aws:sns",
+      "EventVersion": "1.0",
+      "EventSubscriptionArn": "arn:aws:sns:us-east-1:628555153221:dev-register:ac034e58-4253-43c4-b511-0d69e04af93a",
+      "Sns": {
+        "Type": "Notification",
+        "MessageId": "e15b4597-7677-562b-b046-11e57f8ed43f",
+        "TopicArn": "arn:aws:sns:us-east-1:628555153221:dev-register",
+        "Subject": null,
+        "Message": "{\"response_url\":\"https://hooks.slack.com/commands/T03E91NFT/486745524802/EL4MYvgO2pUqA8NzKlnyZ3hi\",\"textArray\":[\"register\",\"me\",\"blah\"],\"channel_name\":\"test\",\"slack_user\":{\"username\":\"mario\",\"user_id\":\"U0PGZ5CTG\"},\"githubUsername\":\"blah\"}",
+        "Timestamp": "2018-11-23T13:59:21.377Z",
+        "SignatureVersion": "1",
+        "Signature": "ALDXNOqoc2UfOMIImAQ3hgZXpajy0c6l7V/r60RWDx6Nqqz0SL9HMn6wnHzkMtOQFSrMAzpWsms7E2RRP75HGYObiMVwU5HiTLm6/RM+Al4cd2Qz5STu/N1ICRePyWWMVDkgiqoL/zHKlCVDpjaTakjRCvkkq5f2iM/rgvsnpMLe/2LdXQ1rX78B42zoUb/DwCVOze3J0ccJsXbP1i4vcPGHezJhbHxVKn7avbrp+ubaKNJcRDnAJ5/os8FNXa9Yr9oUI52a7nr1DdQCY6KbdPKUtM+zwoRE1lCjzpOSxY8GuPRgox4sfQ8BaZz30G5ZMG4WUBnvGSC9npJcBn3e4w==",
+        "SigningCertUrl": "https://sns.us-east-1.amazonaws.com/SimpleNotificationService-ac565b8b1a6c5d002d285f9598aa1d9b.pem",
+        "UnsubscribeUrl": "https://sns.us-east-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-east-1:628555153221:dev-register:ac034e58-4253-43c4-b511-0d69e04af93a",
+        "MessageAttributes": {}
+      }
+    }
+  ]
+}

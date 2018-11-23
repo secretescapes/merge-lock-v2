@@ -6,6 +6,7 @@ plugins:
   - serverless-pseudo-parameters
 
 custom:
+  dynamodbTableName: user-service-users-${self:provider.stage}
   serverless-offline-sns:
     port: 4002 # a free port for the sns server to run on
     debug: true
@@ -49,6 +50,7 @@ provider:
     - Effect: Allow
       Action:
         - SNS:Publish
+        - "dynamodb:*"
       Resource: "*"
 
 functions:
@@ -56,3 +58,23 @@ functions:
     handler: handler.register
     events:
       - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.registerTopic}
+    environment:
+      myRegion: ${opt:region, 'us-east-1'}
+      dynamoDBUserTableName: ${self:custom.dynamodbTableName}
+
+resources:
+  Resources:
+    userEventsDynamoDbTable:
+      Type: "AWS::DynamoDB::Table"
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: username
+            AttributeType: S
+        KeySchema:
+          - AttributeName: username
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: "${self:custom.dynamodbTableName}"
