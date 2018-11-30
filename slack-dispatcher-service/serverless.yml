@@ -39,6 +39,34 @@ custom:
           ],
       }
 
+  listTopic: "${self:provider.stage}-list"
+  listTopicArn:
+    local: "arn:aws:sns:us-east-1:123456789012:${self:custom.listTopic}"
+    dev:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.listTopic}",
+            ],
+          ],
+      }
+    prod:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.listTopic}",
+            ],
+          ],
+      }
+
 provider:
   profile: release-bot
   name: aws
@@ -50,7 +78,6 @@ provider:
         - SNS:Publish
       Resource: "*"
 
-# TODO: Remove this from here. We should create the sns topics in the consumers, not the publishers.
 # TODO: For consumers, use filters: https://serverless.com/framework/docs/providers/aws/events/sns#setting-a-filter-policy
 resources: # CloudFormation template syntax
   Resources:
@@ -58,6 +85,10 @@ resources: # CloudFormation template syntax
       Type: AWS::SNS::Topic
       Properties:
         TopicName: ${self:custom.registerTopic}
+    listTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:custom.listTopic}
 
 functions:
   dispatcher:
@@ -69,4 +100,5 @@ functions:
           integration: lambda
     environment:
       registerTopicArn: ${self:custom.registerTopicArn.${self:provider.stage}}
+      listTopicArn: ${self:custom.listTopicArn.${self:provider.stage}}
       myRegion: ${opt:region, 'us-east-1'}

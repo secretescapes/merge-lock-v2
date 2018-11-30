@@ -29,8 +29,21 @@ async function dispatchEvent(input) {
         return "Please use /register me [github username]";
       }
       return handleRegisterCommand(args[1], input);
+    case "list":
+      return handleListCommand(input);
     default:
       return `Unknown command ${command}`;
+  }
+}
+
+async function handleListCommand(input) {
+  let messageData = prepareEventMessage(input, process.env.listTopicArn);
+  try {
+    await publishEvent(messageData);
+    return `fetching queue for ${input.channel_name}`;
+  } catch (err) {
+    console.error(JSON.stringify(err));
+    return "Something went wrong";
   }
 }
 
@@ -38,7 +51,10 @@ async function handleRegisterCommand(githubUsername, input) {
   if (githubUsername === undefined) {
     return "You must provide a user to be registered";
   }
-  let messageData = prepareEventMessage({ ...input, githubUsername });
+  let messageData = prepareEventMessage(
+    { ...input, githubUsername },
+    process.env.registerTopicArn
+  );
   console.info("publishing message:", messageData);
   try {
     await publishEvent(messageData);
@@ -49,10 +65,10 @@ async function handleRegisterCommand(githubUsername, input) {
   }
 }
 
-function prepareEventMessage(messageJson) {
+function prepareEventMessage(messageJson, topic) {
   return {
     Message: JSON.stringify(messageJson),
-    TopicArn: process.env.registerTopicArn
+    TopicArn: topic
   };
 }
 
