@@ -22,6 +22,16 @@ function findResponseText(message) {
       }>, you have been registered with github username ${
         message.githubUsername
       } :wink:`;
+    case "LIST_SUCCESS":
+      return `Ok, here is the queue for ${formatSlackChannel(
+        message.channel_id,
+        message.channel_name
+      )}\n${formatQueue(message.queueJsonString)}`;
+    case "LIST_ERROR":
+      return `Sorry, I couldn't find any queue for ${formatSlackChannel(
+        message.channel_id,
+        message.channel_name
+      )}, please make sure you ask from the correct channel`;
     default:
       return "Well...I don't know what to say...";
   }
@@ -34,4 +44,21 @@ async function postNotification(url, text) {
   } catch (error) {
     console.error(error);
   }
+}
+
+const formatSlackChannel = (channelId, channelName) =>
+  `<#${channelId}|${channelName}>`;
+const formatSlackUser = slackUser =>
+  `<@${slackUser.user_id}|${slackUser.username}>`;
+
+function formatQueue(queueJsonString) {
+  console.log(`FORMATTING QUEUE: ${queueJsonString}`);
+  return JSON.parse(queueJsonString)
+    .queue.map(entry => `${formatSlackUser(entry.user)} *${entry.branch}*`)
+    .reduce(
+      (accumulator, currentValue, currentIndex) =>
+        `${accumulator}${currentIndex === 0 ? "" : "\n"}${currentIndex +
+          1}.- ${currentValue}`,
+      ""
+    );
 }

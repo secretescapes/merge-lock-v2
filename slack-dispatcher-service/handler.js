@@ -6,6 +6,7 @@ module.exports.dispatcher = async event => {
   const response_url = event.body.response_url;
   const textArray = event.body.text.split(" ");
   const channel_name = event.body.channel_name;
+  const channel_id = event.body.channel_id;
   const slack_user = {
     username: event.body.user_name,
     user_id: event.body.user_id
@@ -15,7 +16,8 @@ module.exports.dispatcher = async event => {
     response_url,
     textArray,
     channel_name,
-    slack_user
+    slack_user,
+    channel_id
   });
 
   return { text: response };
@@ -40,7 +42,7 @@ async function handleListCommand(input) {
   let messageData = prepareEventMessage(input, process.env.listTopicArn);
   try {
     await publishEvent(messageData);
-    return `fetching queue for ${input.channel_name}`;
+    return `fetching queue for <#${input.channel_id}|${input.channel_name}>`;
   } catch (err) {
     console.error(JSON.stringify(err));
     return "Something went wrong";

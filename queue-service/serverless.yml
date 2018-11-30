@@ -1,0 +1,107 @@
+service: queue-service
+
+plugins:
+  - serverless-pseudo-parameters
+
+custom:
+  dynamodbTableName: queue-service-queues-${self:provider.stage}
+  serverless-offline-sns:
+    port: 4002 # a free port for the sns server to run on
+    debug: true
+    # host: 0.0.0.0 # Optional, defaults to 127.0.0.1 if not provided to serverless-offline
+    # sns-endpoint: http://127.0.0.1:4567 # Optional. Only if you want to use a custom endpoint
+    # accountId: 123456789012 # Optional
+  listTopic: "${self:provider.stage}-list"
+  listTopicArn:
+    local: "arn:aws:sns:us-east-1:123456789012:${self:custom.listTopic}"
+    dev:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.listTopic}",
+            ],
+          ],
+      }
+    prod:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.listTopic}",
+            ],
+          ],
+      }
+  responsesTopic: "${self:provider.stage}-responses"
+  responsesTopicArn:
+    local: "arn:aws:sns:us-east-1:123456789012:${self:custom.responsesTopic}"
+    dev:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.responsesTopic}",
+            ],
+          ],
+      }
+    prod:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.responsesTopic}",
+            ],
+          ],
+      }
+
+provider:
+  profile: release-bot
+  name: aws
+  runtime: nodejs8.10
+  stage: ${opt:stage,'dev'}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - SNS:Publish
+        - "dynamodb:*"
+      Resource: "*"
+
+resources:
+  Resources:
+    queuesDynamoDbTable:
+      Type: "AWS::DynamoDB::Table"
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: channel
+            AttributeType: S
+        KeySchema:
+          - AttributeName: channel
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: "${self:custom.dynamodbTableName}"
+
+functions:
+  list:
+    reservedConcurrency: 1 # Only allow 1 instance at the same time to keep consistency
+    handler: handler.list
+    events:
+      - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.listTopic}
+    environment:
+      myRegion: ${opt:region, 'us-east-1'}
+      dynamoDBQueuesTableName: ${self:custom.dynamodbTableName}
+      responsesTopicArn: ${self:custom.responsesTopicArn.${self:provider.stage}}
