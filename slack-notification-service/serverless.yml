@@ -1,0 +1,50 @@
+service: slack-notification-service
+
+plugins:
+  - serverless-pseudo-parameters
+
+provider:
+  profile: release-bot
+  name: aws
+  runtime: nodejs8.10
+  stage: ${opt:stage,'dev'}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - SNS:Publish
+      Resource: "*"
+
+custom:
+  responsesTopic: "${self:provider.stage}-responses"
+  responsesTopicArn:
+    local: "arn:aws:sns:us-east-1:123456789012:${self:custom.responsesTopic}"
+    dev:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.responsesTopic}",
+            ],
+          ],
+      }
+    prod:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.responsesTopic}",
+            ],
+          ],
+      }
+
+functions:
+  notify:
+    handler: handler.notify
+    events:
+      - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.responsesTopic}
