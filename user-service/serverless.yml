@@ -40,6 +40,33 @@ custom:
             ],
           ],
       }
+  responsesTopic: "${self:provider.stage}-responses"
+  responsesTopicArn:
+    local: "arn:aws:sns:us-east-1:123456789012:${self:custom.responsesTopic}"
+    dev:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.responsesTopic}",
+            ],
+          ],
+      }
+    prod:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.responsesTopic}",
+            ],
+          ],
+      }
 
 provider:
   profile: release-bot
@@ -61,9 +88,15 @@ functions:
     environment:
       myRegion: ${opt:region, 'us-east-1'}
       dynamoDBUserTableName: ${self:custom.dynamodbTableName}
+      responsesTopicArn: ${self:custom.responsesTopicArn.${self:provider.stage}}
 
 resources:
   Resources:
+    # TODO: Remove this from here. We should create the sns topics in the consumers, not the publishers.
+    responsesTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:custom.responsesTopic}
     userEventsDynamoDbTable:
       Type: "AWS::DynamoDB::Table"
       DeletionPolicy: Retain
