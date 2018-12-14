@@ -37,9 +37,9 @@ async function processMessage(message) {
   if (item.Item) {
     console.log(`Item: ${JSON.stringify(item)}`);
     const queueJsonString = item.Item["queue"]["S"];
-    onSuccessful(message, queueJsonString);
+    await onSuccessful(message, queueJsonString);
   } else {
-    onError(message, "Could not find item");
+    await onError(message, "Could not find item");
   }
 }
 
