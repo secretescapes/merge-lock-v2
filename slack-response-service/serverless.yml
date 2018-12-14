@@ -1,4 +1,4 @@
-service: slack-notification-service
+service: slack-response-service
 
 plugins:
   - serverless-pseudo-parameters
@@ -44,7 +44,7 @@ custom:
       }
 
 functions:
-  notify:
-    handler: handler.notify
+  response:
+    handler: handler.response
     events:
       - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.responsesTopic}

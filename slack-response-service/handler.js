@@ -1,7 +1,7 @@
 "use strict";
 const axios = require("axios");
 
-module.exports.notify = async (event, context) => {
+module.exports.response = async (event, context) => {
   console.log(JSON.stringify(event));
   const messages = event.Records.map(record => JSON.parse(record.Sns.Message));
   await Promise.all(messages.map(processMessage));
