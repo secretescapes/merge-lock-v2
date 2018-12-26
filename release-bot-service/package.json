@@ -1,0 +1,16 @@
+{
+  "name": "slack-dispatcher-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "handler.js",
+  "scripts": {},
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "aws-sdk": "^2.361.0"
+  },
+  "dependencies": {
+    "axios": "^0.18.0",
+    "serverless-pseudo-parameters": "^2.4.0"
+  }
+}

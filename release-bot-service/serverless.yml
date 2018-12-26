@@ -1,0 +1,102 @@
+service: release-bot-service
+
+plugins:
+  - serverless-pseudo-parameters
+
+custom:
+  dynamoDBUserTableName: ${self:service}-users-${self:provider.stage}
+  dynamoDBQueueTableName: ${self:service}-queues-${self:provider.stage}
+  commandTopic: "${self:service}-${self:provider.stage}-command"
+  commandTopicArn:
+    local: "arn:aws:sns:us-east-1:123456789012:${self:custom.commandTopic}"
+    dev:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.commandTopic}",
+            ],
+          ],
+      }
+    prod:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.commandTopic}",
+            ],
+          ],
+      }
+
+provider:
+  profile: release-bot
+  name: aws
+  runtime: nodejs8.10
+  stage: ${opt:stage,'dev'}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - SNS:Publish
+        - "dynamodb:*"
+      Resource: "*"
+
+resources: # CloudFormation template syntax
+  Resources:
+    commandTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:custom.commandTopic}
+    userEventsDynamoDbTable:
+      Type: "AWS::DynamoDB::Table"
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: username
+            AttributeType: S
+        KeySchema:
+          - AttributeName: username
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: "${self:custom.dynamoDBUserTableName}"
+    queuesDynamoDbTable:
+      Type: "AWS::DynamoDB::Table"
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: channel
+            AttributeType: S
+        KeySchema:
+          - AttributeName: channel
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: "${self:custom.dynamoDBQueueTableName}"
+
+functions:
+  dispatcher:
+    handler: handler.dispatcher
+    events:
+      - http:
+          path: slack/dispatcher
+          method: post
+          integration: lambda
+    environment:
+      commandTopicArn: ${self:custom.commandTopicArn.${self:provider.stage}}
+      myRegion: ${opt:region, 'us-east-1'}
+  server:
+    handler: handler.server
+    events:
+      - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.commandTopic}
+    environment:
+      myRegion: ${opt:region, 'us-east-1'}
+      dynamoDBUserTableName: ${self:custom.dynamoDBUserTableName}
+      dynamoDBQueueTableName: ${self:custom.dynamoDBQueueTableName}
