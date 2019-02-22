@@ -50,6 +50,27 @@ async function processMessage(message) {
       );
       await postNotification(response_url, response);
       break;
+    case "add":
+      if (!args[0] || !args[1]) {
+        await postNotification(
+          response_url,
+          "Please use /add [user] [branch name]"
+        );
+      } else {
+        const user = resolveUser(args[0], user_id, user_name);
+        if (!user) {
+          await postNotification(response_url, "User not recognized");
+        } else {
+          response = await handleAddCommand(
+            user,
+            formatChannel(channel_id, channel_name),
+            args[1]
+          );
+          await postNotification(response_url, response);
+        }
+      }
+
+      break;
     case "create":
       response = await handleCreateCommand(
         formatChannel(channel_id, channel_name)
@@ -62,6 +83,166 @@ async function processMessage(message) {
       break;
     // return `Unknown command ${command}`;
   }
+}
+
+function resolveUser(param, requester_user_id, requester_user_name) {
+  if (param.toLowerCase() === "me") {
+    return { user_id: requester_user_id, username: requester_user_name };
+  } else {
+    const regex = /<@([a-z,A-Z,0-9]{9})\|(\w+)>/g;
+    const match = regex.exec(param);
+    if (!match || match.length < 3) {
+      return null;
+    }
+    return { user_id: match[1], username: match[2] };
+  }
+}
+
+async function handleAddCommand(user, channel, branch) {
+  //TODO: THis could call a function that checks different conditions that
+  // need to be met before being able to enter the QUEUE (PR approved, Test passing, etc...)
+  const preAddConditionsCheck = { pass: true, reasons: [] };
+  if (!preAddConditionsCheck.pass) {
+    //TODO
+    return "Preconditions not met";
+  }
+
+  try {
+    // GET LOCK
+    if (!(await acquireLockForQueue(channel))) {
+      return `Could not get the lock, try again.`;
+    }
+    // READ QUEUE
+    const queue = await getQueue(channel);
+    console.log(`Queue retrieved: ${JSON.stringify(queue)}`);
+
+    // MODIFY QUEUE
+    const newQueue = addToQueue(queue, { user, branch });
+
+    console.log(`new Queue: ${JSON.stringify(newQueue)}`);
+    //TODO: VALIDATE QUEUE
+    //SAVE QUEUE
+    await updateQueue(
+      prepareUpdateQueueItem(channel, JSON.stringify(newQueue))
+    );
+    return `Here is the queue:\nformatQueue(newQueue)`;
+  } catch (err) {
+    console.log(`Error updating queue: ${err}`);
+    return `Error updating the queue`;
+  } finally {
+    //RELEASE LOCK
+    await releaseLockForQueue(channel);
+  }
+}
+
+function addToQueue(queue, newItem, position = -1) {
+  const newQueue = queue.map(item => Object.assign({}, item));
+  newQueue.splice(position < 0 ? queue.length : position, 0, newItem);
+  return newQueue;
+}
+
+async function updateQueue(params) {
+  const dynamoDBOpts = {
+    region: process.env.myRegion
+  };
+  const dynamodb = new AWS.DynamoDB(dynamoDBOpts);
+  try {
+    console.log(`Updating queue`);
+    await dynamodb.updateItem(params).promise();
+    console.log(`Queue updated`);
+  } catch (err) {
+    console.log(`Error updating: ${err}`);
+  }
+}
+
+async function releaseLockForQueue(channel) {
+  const tableName = process.env.dynamoDBQueueTableName;
+  const dynamoDBOpts = {
+    region: process.env.myRegion
+  };
+  const dynamodb = new AWS.DynamoDB(dynamoDBOpts);
+  const params = prepareReleaseLockItem(channel, tableName);
+  try {
+    console.log(`Releasing lock for ${channel}`);
+    await dynamodb.updateItem(params).promise();
+    console.log(`Lock Released for ${channel}`);
+  } catch (err) {
+    console.log(`Error releasing lock for ${channel}: ${err}`);
+  }
+}
+
+function prepareUpdateQueueItem(channel, queueString) {
+  return {
+    ExpressionAttributeNames: {
+      "#Q": "queue"
+    },
+    ExpressionAttributeValues: {
+      ":q": { S: queueString }
+    },
+    Key: {
+      channel: {
+        S: channel
+      }
+    },
+    TableName: process.env.dynamoDBQueueTableName,
+    UpdateExpression: "SET #Q = :q"
+  };
+}
+
+function prepareReleaseLockItem(channel, tableName) {
+  return {
+    ExpressionAttributeNames: {
+      "#L": "lock"
+    },
+    ExpressionAttributeValues: {
+      ":l": { N: "0" }
+    },
+    Key: {
+      channel: {
+        S: channel
+      }
+    },
+    TableName: `${tableName}`,
+    UpdateExpression: "SET #L = :l"
+  };
+}
+
+async function acquireLockForQueue(channel) {
+  let lockAcquired = false;
+  const tableName = process.env.dynamoDBQueueTableName;
+  const dynamoDBOpts = {
+    region: process.env.myRegion
+  };
+  const dynamodb = new AWS.DynamoDB(dynamoDBOpts);
+  const params = prepareAcquireLockItem(channel, tableName);
+  try {
+    console.log(`Acquiring lock for ${channel}`);
+    await dynamodb.updateItem(params).promise();
+    lockAcquired = true;
+    console.log(`Lock acquired for ${channel}`);
+  } catch (err) {
+    console.log(`Error acquiring lock for ${channel}: ${err}`);
+  }
+  return lockAcquired;
+}
+
+function prepareAcquireLockItem(channel, tableName) {
+  return {
+    ExpressionAttributeNames: {
+      "#L": "lock"
+    },
+    ExpressionAttributeValues: {
+      ":l": { N: "1" }
+    },
+    Key: {
+      channel: {
+        S: channel
+      }
+    },
+    ConditionExpression: "#L <> :l",
+    TableName: `${tableName}`,
+    UpdateExpression: "SET #L = :l"
+  };
 }
 
 async function handleCreateCommand(channel) {
@@ -133,7 +314,7 @@ function prepareUserItem(user_id, username, githubUsername, tableName) {
   };
 }
 
-async function handleListCommand(channel) {
+async function getQueue(channel) {
   const tableName = process.env.dynamoDBQueueTableName;
   let dynamoDBOpts = {
     region: process.env.myRegion
@@ -148,22 +329,22 @@ async function handleListCommand(channel) {
     TableName: tableName
   };
 
-  var item;
+  var response;
+  console.log(`retrieving queue ${channel}`);
+  response = await dynamodb.getItem(params).promise();
+  if (!response.Item) {
+    throw new Error("Couldn't find a queue for this channel");
+  }
+  if (!response.Item["queue"]) {
+    return [];
+  }
+  return JSON.parse(response.Item["queue"]["S"]);
+}
 
+async function handleListCommand(channel) {
   try {
-    console.log(`retrieving item: ${JSON.stringify(params)}`);
-    item = await dynamodb.getItem(params).promise();
-    console.log(`Item retrieved: ${JSON.stringify(item)}`);
-    if (item.Item) {
-      if (!item.Item["queue"]) {
-        return `The queue is empty`;
-      }
-      const queueJsonString = item.Item["queue"]["S"];
-      //TODO
-      return formatQueue(queueJsonString);
-    } else {
-      return `Couldn't find a queue for this channel`;
-    }
+    const queue = await getQueue(channel);
+    return formatQueue(queue);
   } catch (err) {
     console.error(`Error retrieving from dynamodb: ${err}`);
     return `Error retriving queue`;
@@ -177,18 +358,21 @@ function prepareEventMessage(messageJson, topic) {
   };
 }
 
-function formatQueue(queueJsonString) {
+function formatQueue(queue) {
   const formatSlackUser = slackUser =>
     `<@${slackUser.user_id}|${slackUser.username}>`;
 
-  return JSON.parse(queueJsonString)
-    .queue.map(entry => `${formatSlackUser(entry.user)} *${entry.branch}*`)
-    .reduce(
-      (accumulator, currentValue, currentIndex) =>
-        `${accumulator}${currentIndex === 0 ? "" : "\n"}${currentIndex +
-          1}.- ${currentValue}`,
-      ""
-    );
+  console.log(`QUEUE: ${queue}`);
+  return queue.length == 0
+    ? `The queue is currently empty`
+    : queue
+        .map(entry => `${formatSlackUser(entry.user)} *${entry.branch}*`)
+        .reduce(
+          (accumulator, currentValue, currentIndex) =>
+            `${accumulator}${currentIndex === 0 ? "" : "\n"}${currentIndex +
+              1}.- ${currentValue}`,
+          ""
+        );
 }
 
 async function publishEvent(messageData) {
