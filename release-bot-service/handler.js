@@ -106,7 +106,18 @@ async function handleAddCommand(user, channel, branch) {
     //TODO
     return "Preconditions not met";
   }
+  const addFunction = (user, branch) => queue =>
+    addToQueue(queue, { user, branch });
+  return updateQueue(channel, addFunction(user, branch));
+}
 
+/**
+ *
+ * @param {string} channel Queue to be updated
+ * @param {(queue)=> queue} operation function that takes an existing queue and returns a modified queue
+ */
+async function updateQueue(channel, operation) {
+  //TODO: Modify this function so it just returns the new status of the queue, an exception
   try {
     // GET LOCK
     if (!(await acquireLockForQueue(channel))) {
@@ -117,15 +128,15 @@ async function handleAddCommand(user, channel, branch) {
     console.log(`Queue retrieved: ${JSON.stringify(queue)}`);
 
     // MODIFY QUEUE
-    const newQueue = addToQueue(queue, { user, branch });
+    const newQueue = operation(queue);
 
     console.log(`new Queue: ${JSON.stringify(newQueue)}`);
-    //TODO: VALIDATE QUEUE
+    //TODO: VALIDATE QUEUE (no dups)
     //SAVE QUEUE
-    await updateQueue(
+    await updateQueueInDB(
       prepareUpdateQueueItem(channel, JSON.stringify(newQueue))
     );
-    return `Here is the queue:\nformatQueue(newQueue)`;
+    return `Here is the queue:\n${formatQueue(newQueue)}`;
   } catch (err) {
     console.log(`Error updating queue: ${err}`);
     return `Error updating the queue`;
@@ -141,7 +152,7 @@ function addToQueue(queue, newItem, position = -1) {
   return newQueue;
 }
 
-async function updateQueue(params) {
+async function updateQueueInDB(params) {
   const dynamoDBOpts = {
     region: process.env.myRegion
   };
