@@ -17,6 +17,9 @@ module.exports.dispatcher = async event => {
 };
 
 async function processMessage(message) {
+  const formatChannel = (channel_id, channel_name) =>
+    `<#${channel_id}|${channel_name}>`;
+
   const {
     team_id,
     channel_id,
@@ -42,7 +45,15 @@ async function processMessage(message) {
       await postNotification(response_url, response);
       break;
     case "list":
-      response = await handleListCommand(channel_name);
+      response = await handleListCommand(
+        formatChannel(channel_id, channel_name)
+      );
+      await postNotification(response_url, response);
+      break;
+    case "create":
+      response = await handleCreateCommand(
+        formatChannel(channel_id, channel_name)
+      );
       await postNotification(response_url, response);
       break;
     default:
@@ -50,6 +61,29 @@ async function processMessage(message) {
       console.log(`Unknown command ${command}`);
       break;
     // return `Unknown command ${command}`;
+  }
+}
+
+async function handleCreateCommand(channel) {
+  const tableName = process.env.dynamoDBQueueTableName;
+  let dynamoDBOpts = {
+    region: process.env.myRegion
+  };
+  let dynamodb = new AWS.DynamoDB(dynamoDBOpts);
+  var params = prepareQueueItem(channel, tableName);
+
+  try {
+    console.log(`Storing item: ${JSON.stringify(params)}`);
+    await dynamodb.putItem(params).promise();
+    console.log(`Item stored`);
+    return `Queue created`;
+  } catch (err) {
+    if (err.toString().startsWith("ConditionalCheckFailedException")) {
+      console.error(`Queue already exists: ${err}`);
+      return `There is already a queue on this channel`;
+    }
+    console.error(`Error storing to dynamodb: ${err}`);
+    return `Error creating queue`;
   }
 }
 
@@ -72,6 +106,19 @@ async function handleRegisterCommand(user_id, user_name, githubUsername) {
     return `Error registering user`;
   }
 }
+
+function prepareQueueItem(channel, tableName) {
+  return {
+    Item: {
+      channel: {
+        S: channel
+      }
+    },
+    ConditionExpression: "attribute_not_exists(channel)",
+    TableName: `${tableName}`
+  };
+}
+
 function prepareUserItem(user_id, username, githubUsername, tableName) {
   return {
     Item: {
@@ -86,7 +133,7 @@ function prepareUserItem(user_id, username, githubUsername, tableName) {
   };
 }
 
-async function handleListCommand(channel_name) {
+async function handleListCommand(channel) {
   const tableName = process.env.dynamoDBQueueTableName;
   let dynamoDBOpts = {
     region: process.env.myRegion
@@ -95,7 +142,7 @@ async function handleListCommand(channel_name) {
   var params = {
     Key: {
       channel: {
-        S: channel_name
+        S: channel
       }
     },
     TableName: tableName
@@ -108,6 +155,9 @@ async function handleListCommand(channel_name) {
     item = await dynamodb.getItem(params).promise();
     console.log(`Item retrieved: ${JSON.stringify(item)}`);
     if (item.Item) {
+      if (!item.Item["queue"]) {
+        return `The queue is empty`;
+      }
       const queueJsonString = item.Item["queue"]["S"];
       //TODO
       return formatQueue(queueJsonString);

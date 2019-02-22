@@ -43,6 +43,7 @@ provider:
     - Effect: Allow
       Action:
         - SNS:Publish
+        - "cloudwatch:*"
         - "dynamodb:*"
       Resource: "*"
 
