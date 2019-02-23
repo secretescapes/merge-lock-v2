@@ -1,6 +1,8 @@
 "use strict";
 const AWS = require("aws-sdk");
 const axios = require("axios");
+import { SlackFormatter } from "./Formatter";
+import { ReleaseQueue } from "./ReleaseQueue";
 
 module.exports.server = async event => {
   console.log(JSON.stringify(event));
@@ -325,7 +327,7 @@ function prepareUserItem(user_id, username, githubUsername, tableName) {
   };
 }
 
-async function getQueue(channel) {
+async function getQueue(channel): Promise<ReleaseQueue> {
   const tableName = process.env.dynamoDBQueueTableName;
   let dynamoDBOpts = {
     region: process.env.myRegion
@@ -347,15 +349,16 @@ async function getQueue(channel) {
     throw new Error("Couldn't find a queue for this channel");
   }
   if (!response.Item["queue"]) {
-    return [];
+    return new ReleaseQueue(channel);
   }
-  return JSON.parse(response.Item["queue"]["S"]);
+  return new ReleaseQueue(channel, JSON.parse(response.Item["queue"]["S"]));
 }
 
 async function handleListCommand(channel) {
   try {
-    const queue = await getQueue(channel);
-    return formatQueue(queue);
+    const queue: ReleaseQueue = await getQueue(channel);
+    const f = new SlackFormatter();
+    return new SlackFormatter().format(queue);
   } catch (err) {
     console.error(`Error retrieving from dynamodb: ${err}`);
     return `Error retriving queue`;
@@ -368,7 +371,7 @@ function prepareEventMessage(messageJson, topic) {
     TopicArn: topic
   };
 }
-
+//TODO :DELETE
 function formatQueue(queue) {
   const formatSlackUser = slackUser =>
     `<@${slackUser.user_id}|${slackUser.username}>`;

@@ -2,6 +2,7 @@ service: release-bot-service
 
 plugins:
   - serverless-pseudo-parameters
+  - serverless-plugin-typescript
 
 custom:
   dynamoDBUserTableName: ${self:service}-users-${self:provider.stage}
