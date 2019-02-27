@@ -2,7 +2,12 @@
 const AWS = require("aws-sdk");
 const axios = require("axios");
 import { SlackFormatter } from "./Formatter";
-import { ReleaseQueue } from "./ReleaseQueue";
+import {
+  ReleaseQueue,
+  DynamoDBReleaseQueue,
+  SlackUser,
+  ReleseSlot
+} from "./ReleaseQueue";
 
 module.exports.server = async event => {
   console.log(JSON.stringify(event));
@@ -87,20 +92,28 @@ async function processMessage(message) {
   }
 }
 
-function resolveUser(param, requester_user_id, requester_user_name) {
+function resolveUser(
+  param,
+  requester_user_id,
+  requester_user_name
+): SlackUser | null {
   if (param.toLowerCase() === "me") {
-    return { user_id: requester_user_id, username: requester_user_name };
+    return new SlackUser(requester_user_name, requester_user_id);
   } else {
-    const regex = /<@([a-z,A-Z,0-9]{9})\|(\w+)>/g;
+    const regex = /<@([a-z,A-Z,0-9]{9})\|([\w\.]+)>/g;
     const match = regex.exec(param);
     if (!match || match.length < 3) {
       return null;
     }
-    return { user_id: match[1], username: match[2] };
+    return new SlackUser(match[2], match[1]);
   }
 }
 
-async function handleAddCommand(user, channel, branch) {
+async function handleAddCommand(
+  user: SlackUser,
+  channel: string,
+  branch: string
+) {
   //TODO: THis could call a function that checks different conditions that
   // need to be met before being able to enter the QUEUE (PR approved, Test passing, etc...)
   const preAddConditionsCheck = { pass: true, reasons: [] };
@@ -109,7 +122,8 @@ async function handleAddCommand(user, channel, branch) {
     return "Preconditions not met";
   }
   const addFunction = (user, branch) => queue =>
-    addToQueue(queue, { user, branch });
+    addToQueue(queue, new ReleseSlot(user, branch));
+
   return updateQueue(channel, addFunction(user, branch));
 }
 
@@ -118,7 +132,7 @@ async function handleAddCommand(user, channel, branch) {
  * @param {string} channel Queue to be updated
  * @param {(queue)=> queue} operation function that takes an existing queue and returns a modified queue
  */
-async function updateQueue(channel, operation) {
+async function updateQueue(channel, operation: (queue) => ReleaseQueue) {
   //TODO: Modify this function so it just returns the new status of the queue, an exception
   try {
     // GET LOCK
@@ -126,7 +140,7 @@ async function updateQueue(channel, operation) {
       return `Could not get the lock, try again.`;
     }
     // READ QUEUE
-    const queue = await getQueue(channel);
+    const queue: ReleaseQueue = await getQueue(channel);
     console.log(`Queue retrieved: ${JSON.stringify(queue)}`);
 
     // MODIFY QUEUE
@@ -138,7 +152,8 @@ async function updateQueue(channel, operation) {
     await updateQueueInDB(
       prepareUpdateQueueItem(channel, JSON.stringify(newQueue))
     );
-    return `Here is the queue:\n${formatQueue(newQueue)}`;
+    const f = new SlackFormatter();
+    return `Here is the queue:\n${f.format(newQueue)}`;
   } catch (err) {
     console.log(`Error updating queue: ${err}`);
     return `Error updating the queue`;
@@ -148,10 +163,12 @@ async function updateQueue(channel, operation) {
   }
 }
 
-function addToQueue(queue, newItem, position = -1) {
-  const newQueue = queue.map(item => Object.assign({}, item));
-  newQueue.splice(position < 0 ? queue.length : position, 0, newItem);
-  return newQueue;
+function addToQueue(
+  queue: ReleaseQueue,
+  newItem: ReleseSlot,
+  position = -1
+): ReleaseQueue {
+  return queue.add(newItem);
 }
 
 async function updateQueueInDB(params) {
@@ -348,16 +365,13 @@ async function getQueue(channel): Promise<ReleaseQueue> {
   if (!response.Item) {
     throw new Error("Couldn't find a queue for this channel");
   }
-  if (!response.Item["queue"]) {
-    return new ReleaseQueue(channel);
-  }
-  return new ReleaseQueue(channel, JSON.parse(response.Item["queue"]["S"]));
+  console.log(`ITEM: ${JSON.stringify(response.Item)}`);
+  return new DynamoDBReleaseQueue(response.Item);
 }
 
 async function handleListCommand(channel) {
   try {
     const queue: ReleaseQueue = await getQueue(channel);
-    const f = new SlackFormatter();
     return new SlackFormatter().format(queue);
   } catch (err) {
     console.error(`Error retrieving from dynamodb: ${err}`);
@@ -370,23 +384,6 @@ function prepareEventMessage(messageJson, topic) {
     Message: JSON.stringify(messageJson),
     TopicArn: topic
   };
-}
-//TODO :DELETE
-function formatQueue(queue) {
-  const formatSlackUser = slackUser =>
-    `<@${slackUser.user_id}|${slackUser.username}>`;
-
-  console.log(`QUEUE: ${queue}`);
-  return queue.length == 0
-    ? `The queue is currently empty`
-    : queue
-        .map(entry => `${formatSlackUser(entry.user)} *${entry.branch}*`)
-        .reduce(
-          (accumulator, currentValue, currentIndex) =>
-            `${accumulator}${currentIndex === 0 ? "" : "\n"}${currentIndex +
-              1}.- ${currentValue}`,
-          ""
-        );
 }
 
 async function publishEvent(messageData) {

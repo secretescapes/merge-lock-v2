@@ -3,14 +3,23 @@
   "version": "1.0.0",
   "description": "",
   "main": "handler.js",
-  "scripts": {},
+  "scripts": {
+    "test": "mocha -r ts-node/register **/*.spec.ts"
+  },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.6",
     "aws-sdk": "^2.361.0",
-    "serverless-plugin-typescript": "^1.1.5"
+    "chai": "^4.2.0",
+    "mocha": "^6.0.2",
+    "serverless-plugin-typescript": "^1.1.5",
+    "ts-mockito": "^2.3.1",
+    "ts-node": "^8.0.2"
   },
   "dependencies": {
+    "@types/node": "^11.9.5",
     "axios": "^0.18.0",
     "serverless-pseudo-parameters": "^2.4.0"
   }

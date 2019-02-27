@@ -1,0 +1,76 @@
+import { expect } from "chai";
+import "mocha";
+import {
+  Queue,
+  ReleseSlot,
+  ReleaseQueue,
+  SlackUser,
+  DynamoDBReleaseQueue
+} from "./ReleaseQueue";
+import { mock } from "ts-mockito";
+import { SlackFormatter } from "./Formatter";
+
+describe("Queue", () => {
+  it("can be created without params", () => {
+    const queue = new Queue();
+    expect(queue).to.be.not.null;
+  });
+
+  it("isEmpty returns true if queue is empty", () => {
+    const queue = new Queue();
+    expect(queue.isEmpty()).to.be.true;
+  });
+
+  it("getReleaseSlots returns empty list if queue is empty", () => {
+    const queue = new Queue();
+    expect(queue.getReleaseSlots()).to.be.eql([]);
+  });
+
+  it("getReleaseSlots returns one slot if one slot is added to queue", () => {
+    const queue = new Queue();
+    const item: ReleseSlot = mock(ReleseSlot);
+    expect(queue.add(item).getReleaseSlots()).to.be.eqls([item]);
+  });
+
+  it("getReleaseSlots returns all slots added to queue", () => {
+    const queue = new Queue();
+    const item1: ReleseSlot = new ReleseSlot(mock(SlackUser), "branch1");
+    const item2: ReleseSlot = new ReleseSlot(mock(SlackUser), "branch2");
+    expect(
+      queue
+        .add(item1)
+        .add(item2)
+        .getReleaseSlots()
+        .map(i => i.getBranch())
+    ).to.be.eqls(["branch1", "branch2"]);
+  });
+
+  it("isEmpty returns false if queue is not empty", () => {
+    const queue = new Queue();
+    const item: ReleseSlot = mock(ReleseSlot);
+    expect(queue.add(item).isEmpty()).to.be.false;
+  });
+
+  it("add returns a queue with one element if queue was empty", () => {
+    const queue = new Queue();
+    const item: ReleseSlot = mock(ReleseSlot);
+    expect(queue.add(item).getReleaseSlots()).to.be.eql([item]);
+  });
+});
+
+describe("ReleaseQueue", () => {
+  it("can be created with a channel", () => {
+    const releaseQueue = new ReleaseQueue("channelName");
+    expect(releaseQueue.getChannel()).to.be.equals("channelName");
+    expect(releaseQueue.isEmpty()).to.be.true;
+  });
+});
+
+describe("ReleaseSlot", () => {
+  it("can be created with a SlackUser and a branch", () => {
+    const slackUser = mock(SlackUser);
+    const releaseSlot = new ReleseSlot(slackUser, "branch");
+    expect(releaseSlot.getBranch()).to.be.equals("branch");
+    expect(releaseSlot.getUser()).to.be.eqls(slackUser);
+  });
+});
