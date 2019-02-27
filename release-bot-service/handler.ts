@@ -6,8 +6,12 @@ import {
   ReleaseQueue,
   DynamoDBReleaseQueue,
   SlackUser,
-  ReleseSlot
+  ReleseSlot,
+  DynamoDBManager
 } from "./ReleaseQueue";
+
+const TABLE_NAME = process.env.dynamoDBQueueTableName || "";
+const REGION = process.env.myRegion || "";
 
 module.exports.server = async event => {
   console.log(JSON.stringify(event));
@@ -140,7 +144,10 @@ async function updateQueue(channel, operation: (queue) => ReleaseQueue) {
       return `Could not get the lock, try again.`;
     }
     // READ QUEUE
-    const queue: ReleaseQueue = await getQueue(channel);
+    const queue: ReleaseQueue = await new DynamoDBManager(
+      TABLE_NAME,
+      REGION
+    ).getQueue(channel);
     console.log(`Queue retrieved: ${JSON.stringify(queue)}`);
 
     // MODIFY QUEUE
@@ -344,34 +351,11 @@ function prepareUserItem(user_id, username, githubUsername, tableName) {
   };
 }
 
-async function getQueue(channel): Promise<ReleaseQueue> {
-  const tableName = process.env.dynamoDBQueueTableName;
-  let dynamoDBOpts = {
-    region: process.env.myRegion
-  };
-  let dynamodb = new AWS.DynamoDB(dynamoDBOpts);
-  var params = {
-    Key: {
-      channel: {
-        S: channel
-      }
-    },
-    TableName: tableName
-  };
-
-  var response;
-  console.log(`retrieving queue ${channel}`);
-  response = await dynamodb.getItem(params).promise();
-  if (!response.Item) {
-    throw new Error("Couldn't find a queue for this channel");
-  }
-  console.log(`ITEM: ${JSON.stringify(response.Item)}`);
-  return new DynamoDBReleaseQueue(response.Item);
-}
-
 async function handleListCommand(channel) {
   try {
-    const queue: ReleaseQueue = await getQueue(channel);
+    const queue = await new DynamoDBManager(TABLE_NAME, REGION).getQueue(
+      channel
+    );
     return new SlackFormatter().format(queue);
   } catch (err) {
     console.error(`Error retrieving from dynamodb: ${err}`);
