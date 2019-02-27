@@ -11,7 +11,7 @@ export class SlackUser {
     return new SlackUser(this.username, this.user_id);
   }
 }
-export class ReleseSlot {
+export class ReleaseSlot {
   private user: SlackUser;
   private branch: string;
   constructor(user: SlackUser, branch: string) {
@@ -27,12 +27,12 @@ export class ReleseSlot {
     return this.branch;
   }
 
-  clone(): ReleseSlot {
-    return new ReleseSlot(this.user.clone(), this.branch);
+  clone(): ReleaseSlot {
+    return new ReleaseSlot(this.user.clone(), this.branch);
   }
 }
 export class Queue {
-  protected items: ReleseSlot[];
+  protected items: ReleaseSlot[];
 
   constructor() {
     this.items = [];
@@ -42,14 +42,22 @@ export class Queue {
     return this.items.length === 0;
   }
 
-  getReleaseSlots(): ReleseSlot[] {
+  getReleaseSlots(): ReleaseSlot[] {
     return this.items;
   }
 
-  add(item: ReleseSlot): Queue {
+  protected insertInItems(
+    item: ReleaseSlot,
+    releaseSlots: ReleaseSlot[]
+  ): ReleaseSlot[] {
+    const items = releaseSlots.map(itm => itm.clone());
+    items.push(item);
+    return items;
+  }
+
+  add(item: ReleaseSlot): Queue {
     const queue = new Queue();
-    queue.items = this.items.map(itm => itm.clone());
-    queue.items.push(item);
+    queue.items = this.insertInItems(item, this.items);
     return queue;
   }
 }
@@ -65,11 +73,10 @@ export class ReleaseQueue extends Queue {
     return this.channel;
   }
 
-  add(releaseSlot: ReleseSlot): ReleaseQueue {
-    const q = super.add(releaseSlot);
-    const rq: ReleaseQueue = q as ReleaseQueue;
-    rq.channel = this.channel;
-    return rq;
+  add(releaseSlot: ReleaseSlot): ReleaseQueue {
+    const queue = new ReleaseQueue(this.channel);
+    queue.items = this.insertInItems(releaseSlot, this.items);
+    return queue;
   }
 }
 
@@ -91,7 +98,7 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
       : [];
     this.items = slotWrappers.map(
       wrapper =>
-        new ReleseSlot(
+        new ReleaseSlot(
           new SlackUser(wrapper.user.username, wrapper.user.user_id),
           wrapper.branch
         )
@@ -125,5 +132,32 @@ export class DynamoDBManager {
       throw new Error("Couldn't find a queue for this channel");
     }
     return new DynamoDBReleaseQueue(response.Item);
+  }
+
+  async addToQueue(
+    releaseSlot: ReleaseSlot,
+    releaseQueue: DynamoDBReleaseQueue
+  ): Promise<DynamoDBReleaseQueue> {
+    const newReleaseQueue = releaseQueue.add(releaseSlot);
+    await this.dynamodb
+      .updateItem({
+        //TODO: Add condition so we only update if the queue hasn't changed
+        ExpressionAttributeNames: {
+          "#Q": "queue"
+        },
+        ExpressionAttributeValues: {
+          ":q": { S: JSON.stringify(newReleaseQueue) }
+        },
+        Key: {
+          channel: {
+            S: newReleaseQueue.getChannel()
+          }
+        },
+        TableName: process.env.dynamoDBQueueTableName,
+        UpdateExpression: "SET #Q = :q"
+      })
+      .promise();
+
+    return newReleaseQueue;
   }
 }

@@ -6,7 +6,7 @@ import {
   ReleaseQueue,
   DynamoDBReleaseQueue,
   SlackUser,
-  ReleseSlot,
+  ReleaseSlot,
   DynamoDBManager
 } from "./ReleaseQueue";
 
@@ -125,161 +125,22 @@ async function handleAddCommand(
     //TODO
     return "Preconditions not met";
   }
-  const addFunction = (user, branch) => queue =>
-    addToQueue(queue, new ReleseSlot(user, branch));
 
-  return updateQueue(channel, addFunction(user, branch));
-}
-
-/**
- *
- * @param {string} channel Queue to be updated
- * @param {(queue)=> queue} operation function that takes an existing queue and returns a modified queue
- */
-async function updateQueue(channel, operation: (queue) => ReleaseQueue) {
-  //TODO: Modify this function so it just returns the new status of the queue, an exception
+  const dynamoDBManager = new DynamoDBManager(TABLE_NAME, REGION);
+  const queue: DynamoDBReleaseQueue = await dynamoDBManager.getQueue(channel);
   try {
-    // GET LOCK
-    if (!(await acquireLockForQueue(channel))) {
-      return `Could not get the lock, try again.`;
-    }
-    // READ QUEUE
-    const queue: ReleaseQueue = await new DynamoDBManager(
-      TABLE_NAME,
-      REGION
-    ).getQueue(channel);
-    console.log(`Queue retrieved: ${JSON.stringify(queue)}`);
-
-    // MODIFY QUEUE
-    const newQueue = operation(queue);
-
-    console.log(`new Queue: ${JSON.stringify(newQueue)}`);
-    //TODO: VALIDATE QUEUE (no dups)
-    //SAVE QUEUE
-    await updateQueueInDB(
-      prepareUpdateQueueItem(channel, JSON.stringify(newQueue))
+    const newQueue = await dynamoDBManager.addToQueue(
+      new ReleaseSlot(user, branch),
+      queue
     );
-    const f = new SlackFormatter();
-    return `Here is the queue:\n${f.format(newQueue)}`;
+    return `Added, here is the queue:\n${new SlackFormatter().format(
+      newQueue
+    )}`;
   } catch (err) {
-    console.log(`Error updating queue: ${err}`);
-    return `Error updating the queue`;
-  } finally {
-    //RELEASE LOCK
-    await releaseLockForQueue(channel);
+    console.log(`Error adding to Queue ${channel}`);
   }
-}
 
-function addToQueue(
-  queue: ReleaseQueue,
-  newItem: ReleseSlot,
-  position = -1
-): ReleaseQueue {
-  return queue.add(newItem);
-}
-
-async function updateQueueInDB(params) {
-  const dynamoDBOpts = {
-    region: process.env.myRegion
-  };
-  const dynamodb = new AWS.DynamoDB(dynamoDBOpts);
-  try {
-    console.log(`Updating queue`);
-    await dynamodb.updateItem(params).promise();
-    console.log(`Queue updated`);
-  } catch (err) {
-    console.log(`Error updating: ${err}`);
-  }
-}
-
-async function releaseLockForQueue(channel) {
-  const tableName = process.env.dynamoDBQueueTableName;
-  const dynamoDBOpts = {
-    region: process.env.myRegion
-  };
-  const dynamodb = new AWS.DynamoDB(dynamoDBOpts);
-  const params = prepareReleaseLockItem(channel, tableName);
-  try {
-    console.log(`Releasing lock for ${channel}`);
-    await dynamodb.updateItem(params).promise();
-    console.log(`Lock Released for ${channel}`);
-  } catch (err) {
-    console.log(`Error releasing lock for ${channel}: ${err}`);
-  }
-}
-
-function prepareUpdateQueueItem(channel, queueString) {
-  return {
-    ExpressionAttributeNames: {
-      "#Q": "queue"
-    },
-    ExpressionAttributeValues: {
-      ":q": { S: queueString }
-    },
-    Key: {
-      channel: {
-        S: channel
-      }
-    },
-    TableName: process.env.dynamoDBQueueTableName,
-    UpdateExpression: "SET #Q = :q"
-  };
-}
-
-function prepareReleaseLockItem(channel, tableName) {
-  return {
-    ExpressionAttributeNames: {
-      "#L": "lock"
-    },
-    ExpressionAttributeValues: {
-      ":l": { N: "0" }
-    },
-    Key: {
-      channel: {
-        S: channel
-      }
-    },
-    TableName: `${tableName}`,
-    UpdateExpression: "SET #L = :l"
-  };
-}
-
-async function acquireLockForQueue(channel) {
-  let lockAcquired = false;
-  const tableName = process.env.dynamoDBQueueTableName;
-  const dynamoDBOpts = {
-    region: process.env.myRegion
-  };
-  const dynamodb = new AWS.DynamoDB(dynamoDBOpts);
-  const params = prepareAcquireLockItem(channel, tableName);
-  try {
-    console.log(`Acquiring lock for ${channel}`);
-    await dynamodb.updateItem(params).promise();
-    lockAcquired = true;
-    console.log(`Lock acquired for ${channel}`);
-  } catch (err) {
-    console.log(`Error acquiring lock for ${channel}: ${err}`);
-  }
-  return lockAcquired;
-}
-
-function prepareAcquireLockItem(channel, tableName) {
-  return {
-    ExpressionAttributeNames: {
-      "#L": "lock"
-    },
-    ExpressionAttributeValues: {
-      ":l": { N: "1" }
-    },
-    Key: {
-      channel: {
-        S: channel
-      }
-    },
-    ConditionExpression: "#L <> :l",
-    TableName: `${tableName}`,
-    UpdateExpression: "SET #L = :l"
-  };
+  return `Something went wrong :/`;
 }
 
 async function handleCreateCommand(channel) {

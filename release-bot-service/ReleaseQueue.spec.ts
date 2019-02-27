@@ -2,9 +2,10 @@ import { expect } from "chai";
 import "mocha";
 import {
   Queue,
-  ReleseSlot,
+  ReleaseSlot,
   ReleaseQueue,
   SlackUser,
+  DynamoDBManager,
   DynamoDBReleaseQueue
 } from "./ReleaseQueue";
 import { mock } from "ts-mockito";
@@ -28,14 +29,14 @@ describe("Queue", () => {
 
   it("getReleaseSlots returns one slot if one slot is added to queue", () => {
     const queue = new Queue();
-    const item: ReleseSlot = mock(ReleseSlot);
+    const item: ReleaseSlot = mock(ReleaseSlot);
     expect(queue.add(item).getReleaseSlots()).to.be.eqls([item]);
   });
 
   it("getReleaseSlots returns all slots added to queue", () => {
     const queue = new Queue();
-    const item1: ReleseSlot = new ReleseSlot(mock(SlackUser), "branch1");
-    const item2: ReleseSlot = new ReleseSlot(mock(SlackUser), "branch2");
+    const item1: ReleaseSlot = new ReleaseSlot(mock(SlackUser), "branch1");
+    const item2: ReleaseSlot = new ReleaseSlot(mock(SlackUser), "branch2");
     expect(
       queue
         .add(item1)
@@ -47,13 +48,13 @@ describe("Queue", () => {
 
   it("isEmpty returns false if queue is not empty", () => {
     const queue = new Queue();
-    const item: ReleseSlot = mock(ReleseSlot);
+    const item: ReleaseSlot = mock(ReleaseSlot);
     expect(queue.add(item).isEmpty()).to.be.false;
   });
 
   it("add returns a queue with one element if queue was empty", () => {
     const queue = new Queue();
-    const item: ReleseSlot = mock(ReleseSlot);
+    const item: ReleaseSlot = mock(ReleaseSlot);
     expect(queue.add(item).getReleaseSlots()).to.be.eql([item]);
   });
 });
@@ -69,8 +70,17 @@ describe("ReleaseQueue", () => {
 describe("ReleaseSlot", () => {
   it("can be created with a SlackUser and a branch", () => {
     const slackUser = mock(SlackUser);
-    const releaseSlot = new ReleseSlot(slackUser, "branch");
+    const releaseSlot = new ReleaseSlot(slackUser, "branch");
     expect(releaseSlot.getBranch()).to.be.equals("branch");
     expect(releaseSlot.getUser()).to.be.eqls(slackUser);
   });
 });
+
+// describe("TEST", () => {
+//   it("can be created with a SlackUser and a branch2", () => {
+//     const slackUser = mock(SlackUser);
+//     const releaseSlot = new ReleseSlot(slackUser, "branch");
+//     const q = new DynamoDBReleaseQueue().add(releaseSlot)
+//     const m = new DynamoDBManager("", "").;
+//   });
+// });
