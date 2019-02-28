@@ -126,7 +126,8 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
         "#Q": "queue"
       },
       ExpressionAttributeValues: {
-        ":q": { S: newQueue.serialize() }
+        ":q": { S: newQueue.serialize() },
+        ":oldQ": { S: this.serialize() }
       },
       Key: {
         channel: {
@@ -134,7 +135,9 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
         }
       },
       TableName: this.tableName,
-      UpdateExpression: "SET #Q = :q"
+      UpdateExpression: "SET #Q = :q",
+      // Only update if value is still the same that was read before.
+      ConditionExpression: "#Q = :oldQ"
     };
     await this.dynamodb.updateItem(expresion).promise();
 
