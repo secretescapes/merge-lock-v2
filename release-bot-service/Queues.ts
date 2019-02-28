@@ -1,3 +1,11 @@
+import {
+  CompositeValidator,
+  ValidatorResult,
+  CompositeResult,
+  BranchIsNotInQueueValidator,
+  BranchHasPrValidator
+} from "./Validators";
+
 export class SlackUser {
   username: string;
   user_id: string;
@@ -46,6 +54,8 @@ export class Queue {
     return this.items;
   }
 
+  protected async validate(releaseSlot: ReleaseSlot) {}
+
   protected insertInItems(
     item: ReleaseSlot,
     releaseSlots: ReleaseSlot[]
@@ -61,6 +71,15 @@ export class Queue {
     return queue;
   }
 }
+
+export class ValidationError extends Error {
+  errors: string[];
+  constructor(errors: string[]) {
+    super();
+    this.errors = errors;
+  }
+}
+
 export class ReleaseQueue extends Queue {
   protected channel: string;
 
@@ -73,7 +92,20 @@ export class ReleaseQueue extends Queue {
     return this.channel;
   }
 
+  protected async validate(releaseSlot: ReleaseSlot) {
+    super.validate(releaseSlot);
+    const validation: CompositeResult = await new CompositeValidator(
+      new BranchIsNotInQueueValidator(),
+      new BranchHasPrValidator()
+    ).validate(this, releaseSlot);
+
+    if (validation.hasErrors()) {
+      throw new ValidationError(validation.getErrors());
+    }
+  }
+
   async add(releaseSlot: ReleaseSlot): Promise<ReleaseQueue> {
+    await this.validate(releaseSlot);
     const queue = new ReleaseQueue(this.channel);
     queue.items = this.insertInItems(releaseSlot, this.items);
     return queue;
@@ -114,6 +146,7 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
   }
 
   async add(releaseSlot: ReleaseSlot): Promise<DynamoDBReleaseQueue> {
+    await this.validate(releaseSlot);
     const newQueue = new DynamoDBReleaseQueue(
       { channel: { S: this.channel } },
       this.dynamodb,

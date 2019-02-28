@@ -17,7 +17,9 @@ export class SlackFormatter implements Formatter<ReleaseQueue> {
   }
 
   format(releaseQueue: ReleaseQueue): string {
-    console.log(`About to format: ${JSON.stringify(releaseQueue)}`);
+    console.log(
+      `About to format: ${JSON.stringify(releaseQueue.getReleaseSlots())}`
+    );
 
     try {
       return (
