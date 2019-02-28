@@ -113,14 +113,6 @@ async function handleAddCommand(
   channel: string,
   branch: string
 ) {
-  //TODO: THis could call a function that checks different conditions that
-  // need to be met before being able to enter the QUEUE (PR approved, Test passing, etc...)
-  const preAddConditionsCheck = { pass: true, reasons: [] };
-  if (!preAddConditionsCheck.pass) {
-    //TODO
-    return "Preconditions not met";
-  }
-
   const dynamoDBManager = new DynamoDBManager(TABLE_NAME, REGION);
   try {
     const queue: DynamoDBReleaseQueue = await dynamoDBManager.getQueue(channel);
@@ -130,6 +122,7 @@ async function handleAddCommand(
     )}`;
   } catch (err) {
     console.error(`Error adding to Queue ${channel}: ${err}`);
+    //TODO: Check for validation errors
   }
 
   return `Something went wrong :/`;
