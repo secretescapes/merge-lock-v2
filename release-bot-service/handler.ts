@@ -183,7 +183,7 @@ function prepareUserItem(user_id, username, githubUsername, tableName) {
   };
 }
 
-async function handleListCommand(channel) {
+async function handleListCommand(channel): Promise<string> {
   try {
     const queue = await new DynamoDBManager(TABLE_NAME, REGION).getQueue(
       channel
