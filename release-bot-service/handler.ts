@@ -129,15 +129,12 @@ async function handleAddCommand(
   const dynamoDBManager = new DynamoDBManager(TABLE_NAME, REGION);
   const queue: DynamoDBReleaseQueue = await dynamoDBManager.getQueue(channel);
   try {
-    const newQueue = await dynamoDBManager.addToQueue(
-      new ReleaseSlot(user, branch),
-      queue
-    );
+    const newQueue = await queue.add(new ReleaseSlot(user, branch));
     return `Added, here is the queue:\n${new SlackFormatter().format(
       newQueue
     )}`;
   } catch (err) {
-    console.log(`Error adding to Queue ${channel}`);
+    console.log(`Error adding to Queue ${channel}: ${err}`);
   }
 
   return `Something went wrong :/`;

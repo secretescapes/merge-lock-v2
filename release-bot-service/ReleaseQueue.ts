@@ -55,14 +55,14 @@ export class Queue {
     return items;
   }
 
-  add(item: ReleaseSlot): Queue {
+  async add(item: ReleaseSlot): Promise<Queue> {
     const queue = new Queue();
     queue.items = this.insertInItems(item, this.items);
     return queue;
   }
 }
 export class ReleaseQueue extends Queue {
-  private channel: string;
+  protected channel: string;
 
   constructor(channel: string) {
     super();
@@ -73,7 +73,7 @@ export class ReleaseQueue extends Queue {
     return this.channel;
   }
 
-  add(releaseSlot: ReleaseSlot): ReleaseQueue {
+  async add(releaseSlot: ReleaseSlot): Promise<ReleaseQueue> {
     const queue = new ReleaseQueue(this.channel);
     queue.items = this.insertInItems(releaseSlot, this.items);
     return queue;
@@ -81,7 +81,7 @@ export class ReleaseQueue extends Queue {
 }
 
 class ReleaseQueueDynamoDBWrapper {
-  channel: any;
+  channel: { S: string };
   queue?: { S: string };
 }
 
@@ -91,8 +91,12 @@ class ReleaseSlotJSONWrapper {
 }
 
 export class DynamoDBReleaseQueue extends ReleaseQueue {
-  constructor(wrapper: ReleaseQueueDynamoDBWrapper) {
-    super(wrapper.channel["S"]);
+  private dynamodb;
+  private tableName: string;
+  constructor(wrapper: ReleaseQueueDynamoDBWrapper, dynamodb, tableName) {
+    super(wrapper.channel.S);
+    this.dynamodb = dynamodb;
+    this.tableName = tableName;
     const slotWrappers: ReleaseSlotJSONWrapper[] = wrapper.queue
       ? JSON.parse(wrapper.queue.S)["items"]
       : [];
@@ -104,16 +108,46 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
         )
     );
   }
+
+  serialize(): string {
+    return JSON.stringify({ items: this.items, channel: this.channel });
+  }
+
+  async add(releaseSlot: ReleaseSlot): Promise<DynamoDBReleaseQueue> {
+    const newQueue = new DynamoDBReleaseQueue(
+      { channel: { S: this.channel } },
+      this.dynamodb,
+      this.tableName
+    );
+    newQueue.items = this.insertInItems(releaseSlot, this.items);
+
+    const expresion = {
+      ExpressionAttributeNames: {
+        "#Q": "queue"
+      },
+      ExpressionAttributeValues: {
+        ":q": { S: newQueue.serialize() }
+      },
+      Key: {
+        channel: {
+          S: newQueue.channel
+        }
+      },
+      TableName: this.tableName,
+      UpdateExpression: "SET #Q = :q"
+    };
+    await this.dynamodb.updateItem(expresion).promise();
+
+    return newQueue;
+  }
 }
 const AWS = require("aws-sdk");
 export class DynamoDBManager {
   private tableName: string;
-  private region: string;
   private dynamodb: any;
 
   constructor(tableName: string, region: string) {
     this.tableName = tableName;
-    this.region = region;
     this.dynamodb = new AWS.DynamoDB({ region });
   }
 
@@ -131,33 +165,10 @@ export class DynamoDBManager {
     if (!response.Item) {
       throw new Error("Couldn't find a queue for this channel");
     }
-    return new DynamoDBReleaseQueue(response.Item);
-  }
-
-  async addToQueue(
-    releaseSlot: ReleaseSlot,
-    releaseQueue: DynamoDBReleaseQueue
-  ): Promise<DynamoDBReleaseQueue> {
-    const newReleaseQueue = releaseQueue.add(releaseSlot);
-    await this.dynamodb
-      .updateItem({
-        //TODO: Add condition so we only update if the queue hasn't changed
-        ExpressionAttributeNames: {
-          "#Q": "queue"
-        },
-        ExpressionAttributeValues: {
-          ":q": { S: JSON.stringify(newReleaseQueue) }
-        },
-        Key: {
-          channel: {
-            S: newReleaseQueue.getChannel()
-          }
-        },
-        TableName: process.env.dynamoDBQueueTableName,
-        UpdateExpression: "SET #Q = :q"
-      })
-      .promise();
-
-    return newReleaseQueue;
+    return new DynamoDBReleaseQueue(
+      response.Item,
+      this.dynamodb,
+      this.tableName
+    );
   }
 }
