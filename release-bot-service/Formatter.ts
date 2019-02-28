@@ -1,4 +1,4 @@
-import { ReleaseQueue, SlackUser } from "./ReleaseQueue";
+import { ReleaseQueue, SlackUser } from "./Queues";
 interface Formatter<T> {
   format(obj: T): string;
 }

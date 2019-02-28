@@ -1,15 +1,7 @@
 import { expect } from "chai";
 import "mocha";
-import {
-  Queue,
-  ReleaseSlot,
-  ReleaseQueue,
-  SlackUser,
-  DynamoDBManager,
-  DynamoDBReleaseQueue
-} from "./ReleaseQueue";
+import { Queue, ReleaseSlot, ReleaseQueue, SlackUser } from "./Queues";
 import { mock } from "ts-mockito";
-import { SlackFormatter } from "./Formatter";
 
 describe("Queue", () => {
   it("can be created without params", () => {
@@ -27,35 +19,33 @@ describe("Queue", () => {
     expect(queue.getReleaseSlots()).to.be.eql([]);
   });
 
-  it("getReleaseSlots returns one slot if one slot is added to queue", () => {
+  it("getReleaseSlots returns one slot if one slot is added to queue", async () => {
     const queue = new Queue();
     const item: ReleaseSlot = mock(ReleaseSlot);
-    expect(queue.add(item).getReleaseSlots()).to.be.eqls([item]);
+    expect((await queue.add(item)).getReleaseSlots()).to.be.eqls([item]);
   });
 
-  it("getReleaseSlots returns all slots added to queue", () => {
+  it("getReleaseSlots returns all slots added to queue", async () => {
     const queue = new Queue();
     const item1: ReleaseSlot = new ReleaseSlot(mock(SlackUser), "branch1");
     const item2: ReleaseSlot = new ReleaseSlot(mock(SlackUser), "branch2");
     expect(
-      queue
-        .add(item1)
-        .add(item2)
+      (await (await queue.add(item1)).add(item2))
         .getReleaseSlots()
         .map(i => i.getBranch())
     ).to.be.eqls(["branch1", "branch2"]);
   });
 
-  it("isEmpty returns false if queue is not empty", () => {
+  it("isEmpty returns false if queue is not empty", async () => {
     const queue = new Queue();
     const item: ReleaseSlot = mock(ReleaseSlot);
-    expect(queue.add(item).isEmpty()).to.be.false;
+    expect((await queue.add(item)).isEmpty()).to.be.false;
   });
 
-  it("add returns a queue with one element if queue was empty", () => {
+  it("add returns a queue with one element if queue was empty", async () => {
     const queue = new Queue();
     const item: ReleaseSlot = mock(ReleaseSlot);
-    expect(queue.add(item).getReleaseSlots()).to.be.eql([item]);
+    expect((await queue.add(item)).getReleaseSlots()).to.be.eql([item]);
   });
 });
 
@@ -75,12 +65,3 @@ describe("ReleaseSlot", () => {
     expect(releaseSlot.getUser()).to.be.eqls(slackUser);
   });
 });
-
-// describe("TEST", () => {
-//   it("can be created with a SlackUser and a branch2", () => {
-//     const slackUser = mock(SlackUser);
-//     const releaseSlot = new ReleseSlot(slackUser, "branch");
-//     const q = new DynamoDBReleaseQueue().add(releaseSlot)
-//     const m = new DynamoDBManager("", "").;
-//   });
-// });

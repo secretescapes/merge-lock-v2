@@ -2,13 +2,8 @@
 const AWS = require("aws-sdk");
 const axios = require("axios");
 import { SlackFormatter } from "./Formatter";
-import {
-  ReleaseQueue,
-  DynamoDBReleaseQueue,
-  SlackUser,
-  ReleaseSlot,
-  DynamoDBManager
-} from "./ReleaseQueue";
+import { DynamoDBReleaseQueue, SlackUser, ReleaseSlot } from "./Queues";
+import { DynamoDBManager } from "./Managers";
 
 const TABLE_NAME = process.env.dynamoDBQueueTableName || "";
 const REGION = process.env.myRegion || "";
