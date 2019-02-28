@@ -122,38 +122,29 @@ async function handleAddCommand(
   }
 
   const dynamoDBManager = new DynamoDBManager(TABLE_NAME, REGION);
-  const queue: DynamoDBReleaseQueue = await dynamoDBManager.getQueue(channel);
   try {
+    const queue: DynamoDBReleaseQueue = await dynamoDBManager.getQueue(channel);
     const newQueue = await queue.add(new ReleaseSlot(user, branch));
     return `Added, here is the queue:\n${new SlackFormatter().format(
       newQueue
     )}`;
   } catch (err) {
-    console.log(`Error adding to Queue ${channel}: ${err}`);
+    console.error(`Error adding to Queue ${channel}: ${err}`);
   }
 
   return `Something went wrong :/`;
 }
 
-async function handleCreateCommand(channel) {
-  const tableName = process.env.dynamoDBQueueTableName;
-  let dynamoDBOpts = {
-    region: process.env.myRegion
-  };
-  let dynamodb = new AWS.DynamoDB(dynamoDBOpts);
-  var params = prepareQueueItem(channel, tableName);
-
+async function handleCreateCommand(channel: string): Promise<string> {
+  const dynamoDBManager = new DynamoDBManager(TABLE_NAME, REGION);
   try {
-    console.log(`Storing item: ${JSON.stringify(params)}`);
-    await dynamodb.putItem(params).promise();
-    console.log(`Item stored`);
-    return `Queue created`;
+    await dynamoDBManager.createQueue(channel);
+    return `Queue has been created`;
   } catch (err) {
-    if (err.toString().startsWith("ConditionalCheckFailedException")) {
-      console.error(`Queue already exists: ${err}`);
+    console.log(`ERROR: ${err.toString()}`);
+    if (err.toString().indexOf("QueryAlreadyExists") > -1) {
       return `There is already a queue on this channel`;
     }
-    console.error(`Error storing to dynamodb: ${err}`);
     return `Error creating queue`;
   }
 }
@@ -176,18 +167,6 @@ async function handleRegisterCommand(user_id, user_name, githubUsername) {
     console.error(`Error storing to dynamodb: ${err}`);
     return `Error registering user`;
   }
-}
-
-function prepareQueueItem(channel, tableName) {
-  return {
-    Item: {
-      channel: {
-        S: channel
-      }
-    },
-    ConditionExpression: "attribute_not_exists(channel)",
-    TableName: `${tableName}`
-  };
 }
 
 function prepareUserItem(user_id, username, githubUsername, tableName) {
