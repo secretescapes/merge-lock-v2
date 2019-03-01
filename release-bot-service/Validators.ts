@@ -1,27 +1,13 @@
 import { Queue, ReleaseSlot } from "./Queues";
-
-class SimpleResult {
-  fail: boolean;
-  reason?: string;
-  static OK: SimpleResult = new SimpleResult(false);
-
-  constructor(fail: boolean, reason?: string) {
-    this.fail = fail;
-    this.reason = reason;
-  }
-
-  isFail(): boolean {
-    return this.fail;
-  }
-  getReason(): string {
-    return this.reason || "";
-  }
-}
-
-export class CompositeResult {
+export class ValidatorResult {
+  static OK: ValidatorResult = new ValidatorResult();
   errors: string[];
-  constructor(errors?: string[]) {
-    this.errors = errors || [];
+  constructor(errors?: string[] | string) {
+    if (typeof errors === "string") {
+      this.errors = [errors];
+    } else {
+      this.errors = errors || [];
+    }
   }
 
   getErrors(): string[] {
@@ -32,17 +18,13 @@ export class CompositeResult {
   }
 }
 interface Validator {
-  validate(queue: Queue, releaseSlot: ReleaseSlot): Promise<CompositeResult>;
+  validate(queue: Queue, releaseSlot: ReleaseSlot): Promise<ValidatorResult>;
 }
-
-interface SimpleValidator {
-  validate(queue: Queue, releaseSlot: ReleaseSlot): Promise<SimpleResult>;
-}
-export class BranchIsNotInQueueValidator implements SimpleValidator {
+export class BranchIsNotInQueueValidator implements Validator {
   async validate(
     queue: Queue,
     releaseSlot: ReleaseSlot
-  ): Promise<SimpleResult> {
+  ): Promise<ValidatorResult> {
     console.log(
       `Checking branch: ${JSON.stringify(queue)} - ${JSON.stringify(
         releaseSlot
@@ -52,37 +34,35 @@ export class BranchIsNotInQueueValidator implements SimpleValidator {
       .getReleaseSlots()
       .map(rl => rl.getBranch())
       .includes(releaseSlot.getBranch())
-      ? new SimpleResult(true, `Branch is already in the queue`)
-      : SimpleResult.OK;
+      ? new ValidatorResult(`Branch is already in the queue`)
+      : ValidatorResult.OK;
   }
 }
 
-export class BranchHasPrValidator implements SimpleValidator {
+export class BranchHasPrValidator implements Validator {
   async validate(
     queue: Queue,
     releaseSlot: ReleaseSlot
-  ): Promise<SimpleResult> {
+  ): Promise<ValidatorResult> {
     //TODO
-    return SimpleResult.OK;
+    return ValidatorResult.OK;
   }
 }
 
 export class CompositeValidator implements Validator {
-  validators: SimpleValidator[];
+  validators: Validator[];
   constructor(...validators) {
     this.validators = validators;
   }
   async validate(
     queue: Queue,
     releaseSlot: ReleaseSlot
-  ): Promise<CompositeResult> {
-    console.log(`VALIDATE`);
+  ): Promise<ValidatorResult> {
     const results = await Promise.all(
       this.validators.map(v => v.validate(queue, releaseSlot))
     );
-    console.log(`RESULT: ${JSON.stringify(results)}`);
-    return new CompositeResult(
-      results.filter(r => r.isFail()).map(r => r.getReason())
+    return new ValidatorResult(
+      ...results.filter(r => r.hasErrors()).map(r => r.getErrors())
     );
   }
 }

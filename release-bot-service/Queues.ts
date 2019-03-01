@@ -1,6 +1,6 @@
 import {
   CompositeValidator,
-  CompositeResult,
+  ValidatorResult,
   BranchIsNotInQueueValidator,
   BranchHasPrValidator
 } from "./Validators";
@@ -97,7 +97,7 @@ export class ReleaseQueue extends Queue {
 
   protected async validate(releaseSlot: ReleaseSlot) {
     super.validate(releaseSlot);
-    const validation: CompositeResult = await new CompositeValidator(
+    const validation: ValidatorResult = await new CompositeValidator(
       new BranchIsNotInQueueValidator(),
       new BranchHasPrValidator()
     ).validate(this, releaseSlot);
