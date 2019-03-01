@@ -1,6 +1,6 @@
 import { DynamoDBReleaseQueue, SlackUser } from "./Queues";
 const AWS = require("aws-sdk");
-
+const axios = require("axios");
 class DynamoDBManager {
   protected tableName: string;
   protected dynamodb: any;
@@ -92,6 +92,48 @@ export class DynamoDBUserManager extends DynamoDBManager {
     } catch (err) {
       console.error(`Error storing to dynamodb: ${err}`);
       throw err;
+    }
+  }
+}
+
+export class ResponseManager {
+  async postResponse(url: string, text: string) {
+    try {
+      await axios.post(url, { text });
+      console.info("Response sent");
+    } catch (error) {
+      console.error(`Error sending response: ${error}`);
+    }
+  }
+}
+
+abstract class SnsManager {
+  protected sns: any;
+  constructor(region: string) {
+    this.sns = new AWS.SNS({ region });
+  }
+
+  abstract async publish(message: string);
+}
+
+export class CommandEventManager extends SnsManager {
+  private topic: string;
+  constructor(region: string, topic: string) {
+    super(region);
+    this.topic = topic;
+  }
+  async publish(message: string) {
+    try {
+      await this.sns
+        .publish({
+          Message: message,
+          TopicArn: this.topic
+        })
+        .promise();
+      console.info("message published");
+    } catch (err) {
+      console.error(err);
+      throw new Error("Error publishing event");
     }
   }
 }

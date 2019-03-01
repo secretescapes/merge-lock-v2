@@ -1,13 +1,17 @@
 "use strict";
-const AWS = require("aws-sdk");
-const axios = require("axios");
 import { SlackFormatter } from "./Formatter";
 import { DynamoDBReleaseQueue, SlackUser, ReleaseSlot } from "./Queues";
-import { DynamoDBQueueManager, DynamoDBUserManager } from "./Managers";
+import {
+  DynamoDBQueueManager,
+  DynamoDBUserManager,
+  ResponseManager,
+  CommandEventManager
+} from "./Managers";
 
 const QUEUES_TABLE_NAME = process.env.dynamoDBQueueTableName || "";
 const USERS_TABLE_NAME = process.env.dynamoDBUserTableName || "";
 const REGION = process.env.myRegion || "";
+const COMMAND_TOPIC = process.env.commandTopicArn || "";
 
 module.exports.server = async event => {
   console.log(JSON.stringify(event));
@@ -18,8 +22,13 @@ module.exports.server = async event => {
 
 module.exports.dispatcher = async event => {
   console.log(JSON.stringify(event));
-  await publishEvent(prepareEventMessage(event, process.env.commandTopicArn));
-
+  try {
+    await new CommandEventManager(REGION, COMMAND_TOPIC).publish(
+      JSON.stringify(event)
+    );
+  } catch (err) {
+    return { text: "Something went wrong" };
+  }
   return { text: "OK" };
 };
 
@@ -37,43 +46,48 @@ async function processMessage(message) {
     response_url
   } = message.body;
 
+  const responseManager = new ResponseManager();
+
   const [command, ...args] = text.split(" ");
   let response;
   switch (command) {
     case "register":
       if (args[0] !== "me") {
-        await postNotification(
+        await responseManager.postResponse(
           response_url,
           "Please use /register me [github username]"
         );
         return;
       }
       response = await handleRegisterCommand(user_id, user_name, args[1]);
-      await postNotification(response_url, response);
+      await responseManager.postResponse(response_url, response);
       break;
     case "list":
       response = await handleListCommand(
         formatChannel(channel_id, channel_name)
       );
-      await postNotification(response_url, response);
+      await responseManager.postResponse(response_url, response);
       break;
     case "add":
       if (!args[0] || !args[1]) {
-        await postNotification(
+        await responseManager.postResponse(
           response_url,
           "Please use /add [user] [branch name]"
         );
       } else {
         const user = resolveUser(args[0], user_id, user_name);
         if (!user) {
-          await postNotification(response_url, "User not recognized");
+          await responseManager.postResponse(
+            response_url,
+            "User not recognized"
+          );
         } else {
           response = await handleAddCommand(
             user,
             formatChannel(channel_id, channel_name),
             args[1]
           );
-          await postNotification(response_url, response);
+          await responseManager.postResponse(response_url, response);
         }
       }
 
@@ -82,10 +96,13 @@ async function processMessage(message) {
       response = await handleCreateCommand(
         formatChannel(channel_id, channel_name)
       );
-      await postNotification(response_url, response);
+      await responseManager.postResponse(response_url, response);
       break;
     default:
-      await postNotification(response_url, `Unknown command ${command}`);
+      await responseManager.postResponse(
+        response_url,
+        `Unknown command ${command}`
+      );
       console.log(`Unknown command ${command}`);
       break;
     // return `Unknown command ${command}`;
@@ -165,35 +182,5 @@ async function handleListCommand(channel): Promise<string> {
   } catch (err) {
     console.error(`Error retrieving from dynamodb: ${err}`);
     return `Error retriving queue`;
-  }
-}
-
-function prepareEventMessage(messageJson, topic) {
-  return {
-    Message: JSON.stringify(messageJson),
-    TopicArn: topic
-  };
-}
-
-async function publishEvent(messageData) {
-  let snsOpts = {
-    region: process.env.myRegion
-  };
-  let sns = new AWS.SNS(snsOpts);
-  try {
-    await sns.publish(messageData).promise();
-    console.info("message published");
-  } catch (err) {
-    console.error(JSON.stringify(err));
-    throw new Error("Error publishing event");
-  }
-}
-
-async function postNotification(url, text) {
-  try {
-    await axios.post(url, { text });
-    console.info("Response sent");
-  } catch (error) {
-    console.error(error);
   }
 }
