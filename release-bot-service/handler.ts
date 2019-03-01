@@ -3,7 +3,7 @@ const AWS = require("aws-sdk");
 const axios = require("axios");
 import { SlackFormatter } from "./Formatter";
 import { DynamoDBReleaseQueue, SlackUser, ReleaseSlot } from "./Queues";
-import { DynamoDBManager } from "./Managers";
+import { DynamoDBQueueManager } from "./Managers";
 
 const TABLE_NAME = process.env.dynamoDBQueueTableName || "";
 const REGION = process.env.myRegion || "";
@@ -113,7 +113,7 @@ async function handleAddCommand(
   channel: string,
   branch: string
 ) {
-  const dynamoDBManager = new DynamoDBManager(TABLE_NAME, REGION);
+  const dynamoDBManager = new DynamoDBQueueManager(TABLE_NAME, REGION);
   try {
     const queue: DynamoDBReleaseQueue = await dynamoDBManager.getQueue(channel);
     const newQueue = await queue.add(new ReleaseSlot(user, branch));
@@ -129,7 +129,7 @@ async function handleAddCommand(
 }
 
 async function handleCreateCommand(channel: string): Promise<string> {
-  const dynamoDBManager = new DynamoDBManager(TABLE_NAME, REGION);
+  const dynamoDBManager = new DynamoDBQueueManager(TABLE_NAME, REGION);
   try {
     await dynamoDBManager.createQueue(channel);
     return `Queue has been created`;
@@ -178,7 +178,7 @@ function prepareUserItem(user_id, username, githubUsername, tableName) {
 
 async function handleListCommand(channel): Promise<string> {
   try {
-    const queue = await new DynamoDBManager(TABLE_NAME, REGION).getQueue(
+    const queue = await new DynamoDBQueueManager(TABLE_NAME, REGION).getQueue(
       channel
     );
     return new SlackFormatter().format(queue);

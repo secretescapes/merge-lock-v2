@@ -1,7 +1,7 @@
 import { DynamoDBReleaseQueue } from "./Queues";
 
 const AWS = require("aws-sdk");
-export class DynamoDBManager {
+export class DynamoDBQueueManager {
   private tableName: string;
   private dynamodb: any;
 
