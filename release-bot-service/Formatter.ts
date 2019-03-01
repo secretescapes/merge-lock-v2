@@ -5,7 +5,7 @@ interface Formatter<T> {
 
 class SlackUserFormatter implements Formatter<SlackUser> {
   format(obj: SlackUser): string {
-    return `<@${obj.user_id}|${obj.username}>`;
+    return obj.toString();
   }
 }
 

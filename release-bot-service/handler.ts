@@ -3,9 +3,10 @@ const AWS = require("aws-sdk");
 const axios = require("axios");
 import { SlackFormatter } from "./Formatter";
 import { DynamoDBReleaseQueue, SlackUser, ReleaseSlot } from "./Queues";
-import { DynamoDBQueueManager } from "./Managers";
+import { DynamoDBQueueManager, DynamoDBUserManager } from "./Managers";
 
-const TABLE_NAME = process.env.dynamoDBQueueTableName || "";
+const QUEUES_TABLE_NAME = process.env.dynamoDBQueueTableName || "";
+const USERS_TABLE_NAME = process.env.dynamoDBUserTableName || "";
 const REGION = process.env.myRegion || "";
 
 module.exports.server = async event => {
@@ -113,7 +114,7 @@ async function handleAddCommand(
   channel: string,
   branch: string
 ) {
-  const dynamoDBManager = new DynamoDBQueueManager(TABLE_NAME, REGION);
+  const dynamoDBManager = new DynamoDBQueueManager(QUEUES_TABLE_NAME, REGION);
   try {
     const queue: DynamoDBReleaseQueue = await dynamoDBManager.getQueue(channel);
     const newQueue = await queue.add(new ReleaseSlot(user, branch));
@@ -129,7 +130,7 @@ async function handleAddCommand(
 }
 
 async function handleCreateCommand(channel: string): Promise<string> {
-  const dynamoDBManager = new DynamoDBQueueManager(TABLE_NAME, REGION);
+  const dynamoDBManager = new DynamoDBQueueManager(QUEUES_TABLE_NAME, REGION);
   try {
     await dynamoDBManager.createQueue(channel);
     return `Queue has been created`;
@@ -143,44 +144,23 @@ async function handleCreateCommand(channel: string): Promise<string> {
 }
 
 async function handleRegisterCommand(user_id, user_name, githubUsername) {
-  const tableName = process.env.dynamoDBUserTableName;
-
-  let dynamoDBOpts = {
-    region: process.env.myRegion
-  };
-  let dynamodb = new AWS.DynamoDB(dynamoDBOpts);
-  var params = prepareUserItem(user_id, user_name, githubUsername, tableName);
-
   try {
-    console.log(`Storing item: ${JSON.stringify(params)}`);
-    await dynamodb.putItem(params).promise();
-    console.log(`Item stored`);
+    new DynamoDBUserManager(USERS_TABLE_NAME, REGION).updateUser(
+      new SlackUser(user_name, user_id),
+      githubUsername
+    );
     return `User registered`;
   } catch (err) {
-    console.error(`Error storing to dynamodb: ${err}`);
     return `Error registering user`;
   }
 }
 
-function prepareUserItem(user_id, username, githubUsername, tableName) {
-  return {
-    Item: {
-      username: {
-        S: `<@${user_id}|${username}>`
-      },
-      githubUsername: {
-        S: githubUsername
-      }
-    },
-    TableName: `${tableName}`
-  };
-}
-
 async function handleListCommand(channel): Promise<string> {
   try {
-    const queue = await new DynamoDBQueueManager(TABLE_NAME, REGION).getQueue(
-      channel
-    );
+    const queue = await new DynamoDBQueueManager(
+      QUEUES_TABLE_NAME,
+      REGION
+    ).getQueue(channel);
     return new SlackFormatter().format(queue);
   } catch (err) {
     console.error(`Error retrieving from dynamodb: ${err}`);

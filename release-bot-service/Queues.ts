@@ -1,6 +1,5 @@
 import {
   CompositeValidator,
-  ValidatorResult,
   CompositeResult,
   BranchIsNotInQueueValidator,
   BranchHasPrValidator
@@ -17,6 +16,10 @@ export class SlackUser {
 
   clone(): SlackUser {
     return new SlackUser(this.username, this.user_id);
+  }
+
+  toString(): string {
+    return `<@${this.user_id}|${this.username}>`;
   }
 }
 export class ReleaseSlot {

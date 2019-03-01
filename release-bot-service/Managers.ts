@@ -1,15 +1,15 @@
-import { DynamoDBReleaseQueue } from "./Queues";
-
+import { DynamoDBReleaseQueue, SlackUser } from "./Queues";
 const AWS = require("aws-sdk");
-export class DynamoDBQueueManager {
-  private tableName: string;
-  private dynamodb: any;
 
+class DynamoDBManager {
+  protected tableName: string;
+  protected dynamodb: any;
   constructor(tableName: string, region: string) {
     this.tableName = tableName;
     this.dynamodb = new AWS.DynamoDB({ region });
   }
-
+}
+export class DynamoDBQueueManager extends DynamoDBManager {
   /**
    * Returns the DynamoDBReleaseQueue for channel or throws an error if
    * there is no queue for that channel.
@@ -68,6 +68,29 @@ export class DynamoDBQueueManager {
         throw new Error("QueryAlreadyExists");
       }
       console.error(`Error creating queue: ${err}`);
+      throw err;
+    }
+  }
+}
+
+export class DynamoDBUserManager extends DynamoDBManager {
+  async updateUser(slackUser: SlackUser, githubUsername) {
+    try {
+      await this.dynamodb
+        .putItem({
+          Item: {
+            username: {
+              S: slackUser.toString()
+            },
+            githubUsername: {
+              S: githubUsername
+            }
+          },
+          TableName: `${this.tableName}`
+        })
+        .promise();
+    } catch (err) {
+      console.error(`Error storing to dynamodb: ${err}`);
       throw err;
     }
   }
