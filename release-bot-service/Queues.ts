@@ -6,8 +6,8 @@ import {
 } from "./Validators";
 
 export class SlackUser {
-  username: string;
-  user_id: string;
+  private username: string;
+  private user_id: string;
 
   constructor(username: string, userId: string) {
     this.username = username;
@@ -20,6 +20,18 @@ export class SlackUser {
 
   toString(): string {
     return `<@${this.user_id}|${this.username}>`;
+  }
+}
+
+export class SlackChannel {
+  private channelName: string;
+  private channelId: String;
+  constructor(channelName: string, channelId: string) {
+    this.channelId = channelId;
+    this.channelName = channelName;
+  }
+  toString(): string {
+    return `<#${this.channelId}|${this.channelName}>`;
   }
 }
 export class ReleaseSlot {
@@ -162,8 +174,7 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
         "#Q": "queue"
       },
       ExpressionAttributeValues: {
-        ":q": { S: newQueue.serialize() },
-        ":oldQ": { S: this.serialize() }
+        ":q": { S: newQueue.serialize() }
       },
       Key: {
         channel: {
@@ -171,10 +182,15 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
         }
       },
       TableName: this.tableName,
-      UpdateExpression: "SET #Q = :q",
-      // Only update if value is still the same that was read before.
-      ConditionExpression: "#Q = :oldQ"
+      UpdateExpression: "SET #Q = :q"
     };
+    // Only update if value is still the same that was read before.
+    if (!this.isEmpty()) {
+      expresion["ExpressionAttributeValues"][":oldQ"] = { S: this.serialize() };
+      expresion["ConditionExpression"] = "#Q = :oldQ";
+    } else {
+      expresion["ConditionExpression"] = "attribute_not_exists(queue)";
+    }
     await this.dynamodb.updateItem(expresion).promise();
 
     return newQueue;

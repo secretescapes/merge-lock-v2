@@ -7,6 +7,7 @@ import {
   ResponseManager,
   CommandEventManager
 } from "./Managers";
+import { SlackCommandFactory, Command, CommandResult } from "./Commands";
 
 const QUEUES_TABLE_NAME = process.env.dynamoDBQueueTableName || "";
 const USERS_TABLE_NAME = process.env.dynamoDBUserTableName || "";
@@ -33,80 +34,87 @@ module.exports.dispatcher = async event => {
 };
 
 async function processMessage(message) {
-  const formatChannel = (channel_id, channel_name) =>
-    `<#${channel_id}|${channel_name}>`;
+  const command: Command = new SlackCommandFactory().buildCommand(message.body);
+  const result: CommandResult = await command.execute();
+  await new ResponseManager().postResponse(
+    message.body.response_url,
+    result.result
+  );
 
-  const {
-    team_id,
-    channel_id,
-    channel_name,
-    user_id,
-    user_name,
-    text,
-    response_url
-  } = message.body;
+  // const formatChannel = (channel_id, channel_name) =>
+  //   `<#${channel_id}|${channel_name}>`;
 
-  const responseManager = new ResponseManager();
+  // const {
+  //   team_id,
+  //   channel_id,
+  //   channel_name,
+  //   user_id,
+  //   user_name,
+  //   text,
+  //   response_url
+  // } = message.body;
 
-  const [command, ...args] = text.split(" ");
-  let response;
-  switch (command) {
-    case "register":
-      if (args[0] !== "me") {
-        await responseManager.postResponse(
-          response_url,
-          "Please use /register me [github username]"
-        );
-        return;
-      }
-      response = await handleRegisterCommand(user_id, user_name, args[1]);
-      await responseManager.postResponse(response_url, response);
-      break;
-    case "list":
-      response = await handleListCommand(
-        formatChannel(channel_id, channel_name)
-      );
-      await responseManager.postResponse(response_url, response);
-      break;
-    case "add":
-      if (!args[0] || !args[1]) {
-        await responseManager.postResponse(
-          response_url,
-          "Please use /add [user] [branch name]"
-        );
-      } else {
-        const user = resolveUser(args[0], user_id, user_name);
-        if (!user) {
-          await responseManager.postResponse(
-            response_url,
-            "User not recognized"
-          );
-        } else {
-          response = await handleAddCommand(
-            user,
-            formatChannel(channel_id, channel_name),
-            args[1]
-          );
-          await responseManager.postResponse(response_url, response);
-        }
-      }
+  // const responseManager = new ResponseManager();
 
-      break;
-    case "create":
-      response = await handleCreateCommand(
-        formatChannel(channel_id, channel_name)
-      );
-      await responseManager.postResponse(response_url, response);
-      break;
-    default:
-      await responseManager.postResponse(
-        response_url,
-        `Unknown command ${command}`
-      );
-      console.log(`Unknown command ${command}`);
-      break;
-    // return `Unknown command ${command}`;
-  }
+  // const [command, ...args] = text.split(" ");
+  // let response;
+  // switch (command) {
+  //   case "register":
+  //     if (args[0] !== "me") {
+  //       await responseManager.postResponse(
+  //         response_url,
+  //         "Please use /register me [github username]"
+  //       );
+  //       return;
+  //     }
+  //     response = await handleRegisterCommand(user_id, user_name, args[1]);
+  //     await responseManager.postResponse(response_url, response);
+  //     break;
+  //   case "list":
+  //     response = await handleListCommand(
+  //       formatChannel(channel_id, channel_name)
+  //     );
+  //     await responseManager.postResponse(response_url, response);
+  //     break;
+  //   case "add":
+  //     if (!args[0] || !args[1]) {
+  //       await responseManager.postResponse(
+  //         response_url,
+  //         "Please use /add [user] [branch name]"
+  //       );
+  //     } else {
+  //       const user = resolveUser(args[0], user_id, user_name);
+  //       if (!user) {
+  //         await responseManager.postResponse(
+  //           response_url,
+  //           "User not recognized"
+  //         );
+  //       } else {
+  //         response = await handleAddCommand(
+  //           user,
+  //           formatChannel(channel_id, channel_name),
+  //           args[1]
+  //         );
+  //         await responseManager.postResponse(response_url, response);
+  //       }
+  //     }
+
+  //     break;
+  //   case "create":
+  //     response = await handleCreateCommand(
+  //       formatChannel(channel_id, channel_name)
+  //     );
+  //     await responseManager.postResponse(response_url, response);
+  //     break;
+  //   default:
+  //     await responseManager.postResponse(
+  //       response_url,
+  //       `Unknown command ${command}`
+  //     );
+  //     console.log(`Unknown command ${command}`);
+  //     break;
+  //   // return `Unknown command ${command}`;
+  // }
 }
 
 function resolveUser(

@@ -16,6 +16,7 @@ export class DynamoDBQueueManager extends DynamoDBManager {
    * @param channel
    */
   async getQueue(channel: string): Promise<DynamoDBReleaseQueue> {
+    console.log(`${channel} - ${this.tableName}`);
     const response = await this.dynamodb
       .getItem({
         Key: {
