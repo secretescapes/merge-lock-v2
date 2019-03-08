@@ -1,7 +1,7 @@
 import { SlackChannel } from "../Queues";
 import { DynamoDBQueueManager } from "../Managers";
 import { Command, CommandResult, QUEUES_TABLE_NAME, REGION } from "./Command";
-export class createQueueCommand extends Command {
+export class CreateQueueCommand extends Command {
   private channel: SlackChannel;
   constructor(channel: SlackChannel) {
     super();

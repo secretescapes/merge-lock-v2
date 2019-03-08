@@ -4,6 +4,7 @@ import {
   BranchIsNotInQueueValidator,
   BranchHasPrValidator
 } from "./Validators";
+import * as _ from "underscore";
 
 export class SlackUser {
   private username: string;
@@ -14,6 +15,11 @@ export class SlackUser {
     this.user_id = userId;
   }
 
+  equals(slackUser: SlackUser): boolean {
+    return (
+      this.username === slackUser.username && this.user_id === slackUser.user_id
+    );
+  }
   clone(): SlackUser {
     return new SlackUser(this.username, this.user_id);
   }
@@ -42,6 +48,11 @@ export class ReleaseSlot {
     this.branch = branch;
   }
 
+  equals(releaseSlot: ReleaseSlot): boolean {
+    return (
+      this.user.equals(releaseSlot.user) && this.branch === releaseSlot.branch
+    );
+  }
   getUser(): SlackUser {
     return this.user;
   }
@@ -61,6 +72,15 @@ export class Queue {
     this.items = [];
   }
 
+  equals(queue: Queue): boolean {
+    if (queue.items.length !== this.items.length) {
+      return false;
+    }
+
+    return _.zip(queue.items, this.items).every(pairOfItems =>
+      pairOfItems[0].equals(pairOfItems[1])
+    );
+  }
   isEmpty(): boolean {
     return this.items.length === 0;
   }
@@ -80,10 +100,11 @@ export class Queue {
     return items;
   }
 
-  async add(item: ReleaseSlot): Promise<Queue> {
-    const queue = new Queue();
-    queue.items = this.insertInItems(item, this.items);
-    return queue;
+  protected removeFromItems(
+    branch: string,
+    items: ReleaseSlot[]
+  ): ReleaseSlot[] {
+    return items.filter(item => item.getBranch() !== branch);
   }
 }
 
@@ -105,6 +126,10 @@ export class ReleaseQueue extends Queue {
 
   getChannel(): string {
     return this.channel;
+  }
+
+  equals(releaseQueue: ReleaseQueue): boolean {
+    return super.equals(releaseQueue) && this.channel === releaseQueue.channel;
   }
 
   protected async validate(releaseSlot: ReleaseSlot) {
@@ -162,13 +187,32 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
 
   async add(releaseSlot: ReleaseSlot): Promise<DynamoDBReleaseQueue> {
     await this.validate(releaseSlot);
-    const newQueue = new DynamoDBReleaseQueue(
+    const newQueue = this.clone();
+    newQueue.items = this.insertInItems(releaseSlot, this.items);
+
+    await this.updateQueueInDB(newQueue);
+
+    return newQueue;
+  }
+
+  async remove(branch: string): Promise<DynamoDBReleaseQueue> {
+    const newQueue = this.clone();
+    newQueue.items = this.removeFromItems(branch, this.items);
+    await this.updateQueueInDB(newQueue);
+    return newQueue;
+  }
+
+  private clone(): DynamoDBReleaseQueue {
+    return new DynamoDBReleaseQueue(
       { channel: { S: this.channel } },
       this.dynamodb,
       this.tableName
     );
-    newQueue.items = this.insertInItems(releaseSlot, this.items);
-
+  }
+  private async updateQueueInDB(newQueue: DynamoDBReleaseQueue) {
+    if (newQueue.equals(this)) {
+      return;
+    }
     const expresion = {
       ExpressionAttributeNames: {
         "#Q": "queue"
@@ -191,8 +235,7 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
     } else {
       expresion["ConditionExpression"] = "attribute_not_exists(queue)";
     }
+    console.log(`Updating Queue in DB: ${this.channel}`);
     await this.dynamodb.updateItem(expresion).promise();
-
-    return newQueue;
   }
 }

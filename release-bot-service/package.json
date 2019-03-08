@@ -20,7 +20,9 @@
   },
   "dependencies": {
     "@types/node": "^11.9.5",
+    "@types/underscore": "^1.8.13",
     "axios": "^0.18.0",
-    "serverless-pseudo-parameters": "^2.4.0"
+    "serverless-pseudo-parameters": "^2.4.0",
+    "underscore": "^1.9.1"
   }
 }

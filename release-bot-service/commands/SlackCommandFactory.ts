@@ -2,8 +2,9 @@ import { SlackUser, SlackChannel } from "../Queues";
 import { Command, UnknowCommand } from "./Command";
 import { RegisterUserCommand } from "./RegisterUserCommand";
 import { addToQueueCommand } from "./addToQueueCommand";
-import { createQueueCommand } from "./createQueueCommand";
+import { CreateQueueCommand } from "./CreateQueueCommand";
 import { ListCommand } from "./ListCommand";
+import { RemoveFromQueueCommand } from "./RemoveFromQueueCommand";
 
 class Body {
   token: string;
@@ -38,7 +39,12 @@ export class SlackCommandFactory {
           args[1]
         );
       case "create":
-        return new createQueueCommand(
+        return new CreateQueueCommand(
+          new SlackChannel(body.channel_name, body.channel_id)
+        );
+      case "remove":
+        return new RemoveFromQueueCommand(
+          args[0],
           new SlackChannel(body.channel_name, body.channel_id)
         );
       default:
