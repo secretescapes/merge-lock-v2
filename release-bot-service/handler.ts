@@ -47,15 +47,14 @@ module.exports.github = async event => {
           process.env.dynamoDBQueueTableName || "",
           REGION
         ).getQueueByRepository(prEvent.repository.full_name);
-
-        await new GithubEventsManager(REGION, GITHUB_TOPIC).publishEvent(
-          new GithubEvent("MERGE", prEvent)
-        );
-
         if (queue) {
           await queue.remove(prEvent.pull_request.head.ref);
         }
       }
+
+      await new GithubEventsManager(REGION, GITHUB_TOPIC).publishEvent(
+        new GithubEvent("MERGE", prEvent)
+      );
       break;
   }
 };
