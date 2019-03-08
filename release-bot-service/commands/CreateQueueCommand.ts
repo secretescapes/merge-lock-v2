@@ -3,14 +3,22 @@ import { DynamoDBQueueManager } from "../Managers";
 import { Command, CommandResult, QUEUES_TABLE_NAME, REGION } from "./Command";
 export class CreateQueueCommand extends Command {
   private channel: SlackChannel;
-  constructor(channel: SlackChannel) {
+  private repository: string | null;
+  constructor(channel: SlackChannel, repository: string) {
     super();
     this.channel = channel;
+    this.repository = repository;
   }
   protected async executeCmd(): Promise<CommandResult> {
     const dynamoDBManager = new DynamoDBQueueManager(QUEUES_TABLE_NAME, REGION);
     try {
-      await dynamoDBManager.createQueue(this.channel.toString());
+      if (!this.repository) {
+        return { success: true, result: `Missing params` };
+      }
+      await dynamoDBManager.createQueue(
+        this.channel.toString(),
+        this.repository
+      );
       return { success: true, result: `Queue has been created` };
     } catch (err) {
       console.log(`ERROR: ${err.toString()}`);
@@ -24,6 +32,12 @@ export class CreateQueueCommand extends Command {
     }
   }
   validate(): string | true {
+    if (!this.repository) {
+      return `Please, provide a valid repository`;
+    }
+    if (!/.*\/.*/g.test(this.repository)) {
+      return `Please, provide the full repository name ([owner]/[repo name])`;
+    }
     return true;
   }
 }

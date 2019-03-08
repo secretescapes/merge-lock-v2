@@ -37,6 +37,36 @@ export class DynamoDBQueueManager extends DynamoDBManager {
     );
   }
 
+  async getQueueByRepository(
+    repo: string
+  ): Promise<DynamoDBReleaseQueue | null> {
+    console.log(`Searching queue by repo [${repo}]`);
+    try {
+      const response = await this.dynamodb
+        .scan({
+          ExpressionAttributeValues: {
+            ":repo": {
+              S: repo
+            }
+          },
+          FilterExpression: "repository = :repo",
+          TableName: this.tableName
+        })
+        .promise();
+      console.log(`Response: ${JSON.stringify(response)}`);
+      if (response.Items.length > 0) {
+        return new DynamoDBReleaseQueue(
+          response.Items[0],
+          this.dynamodb,
+          this.tableName
+        );
+      }
+    } catch (err) {
+      console.error(`Error scanning DB: ${err}`);
+    }
+    return null;
+  }
+
   /**
    * Creates a queue for the channel provided if none exists already.
    * Otherwise it throws QueryAlreadyExists.
@@ -44,13 +74,19 @@ export class DynamoDBQueueManager extends DynamoDBManager {
    * Returns the new DynamoDBReleaseQueue created.
    * @param channel
    */
-  async createQueue(channel: string): Promise<DynamoDBReleaseQueue> {
+  async createQueue(
+    channel: string,
+    repository: string
+  ): Promise<DynamoDBReleaseQueue> {
     try {
       await this.dynamodb
         .putItem({
           Item: {
             channel: {
               S: channel
+            },
+            repository: {
+              S: repository
             }
           },
           ConditionExpression: "attribute_not_exists(channel)",
@@ -130,12 +166,45 @@ class EventsManager {
   }
 }
 
+export type EventType = "MERGE";
+export type PrEvent = {
+  action: "opened" | "closed";
+  number: number;
+  pull_request: {
+    html_url: string;
+    title: string;
+    locked: boolean;
+    merged: boolean;
+    head: {
+      ref: string;
+    };
+    merged_by: {
+      login: string;
+    };
+  };
+  repository: {
+    full_name: string;
+  };
+  sender: {
+    login: string;
+  };
+};
+export class GithubEvent {
+  eventType: EventType;
+  originalEvent: PrEvent;
+  constructor(type: EventType, originalEvent: PrEvent) {
+    this.eventType = type;
+    this.originalEvent = originalEvent;
+  }
+}
+export class GithubEventsManager extends EventsManager {
+  async publishEvent(event: GithubEvent) {
+    await this.publish(JSON.stringify(event));
+  }
+}
+
 type COMMAND_EVENT = string;
 export class CommandEventsManager extends EventsManager {
-  constructor(region: string, topic: string) {
-    super(region, topic);
-  }
-
   async publishEvent(event: COMMAND_EVENT) {
     await this.publish(event);
   }

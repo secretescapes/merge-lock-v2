@@ -40,7 +40,8 @@ export class SlackCommandFactory {
         );
       case "create":
         return new CreateQueueCommand(
-          new SlackChannel(body.channel_name, body.channel_id)
+          new SlackChannel(body.channel_name, body.channel_id),
+          args[0]
         );
       case "remove":
         return new RemoveFromQueueCommand(
