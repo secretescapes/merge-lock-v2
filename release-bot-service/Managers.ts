@@ -1,4 +1,4 @@
-import { DynamoDBReleaseQueue, SlackUser } from "./Queues";
+import { DynamoDBReleaseQueue, SlackUser, Queue } from "./Queues";
 const AWS = require("aws-sdk");
 const axios = require("axios");
 class DynamoDBManager {
@@ -107,23 +107,14 @@ export class ResponseManager {
     }
   }
 }
-
-abstract class SnsManager {
-  protected sns: any;
-  constructor(region: string) {
-    this.sns = new AWS.SNS({ region });
-  }
-
-  abstract async publish(message: string);
-}
-
-export class CommandEventManager extends SnsManager {
+class EventsManager {
+  private sns: any;
   private topic: string;
   constructor(region: string, topic: string) {
-    super(region);
+    this.sns = new AWS.SNS({ region });
     this.topic = topic;
   }
-  async publish(message: string) {
+  protected async publish(message: string) {
     try {
       await this.sns
         .publish({
@@ -136,5 +127,36 @@ export class CommandEventManager extends SnsManager {
       console.error(err);
       throw new Error("Error publishing event");
     }
+  }
+}
+
+type COMMAND_EVENT = string;
+export class CommandEventsManager extends EventsManager {
+  constructor(region: string, topic: string) {
+    super(region, topic);
+  }
+
+  async publishEvent(event: COMMAND_EVENT) {
+    await this.publish(event);
+  }
+}
+
+type QUEUE_CHANGED = {
+  channel: string;
+  before: Queue;
+  after: Queue;
+};
+export class QueueEventsManager extends EventsManager {
+  constructor() {
+    super(process.env.myRegion || "", process.env.queueTopicArn || "");
+  }
+  async publishEvent(event: QUEUE_CHANGED) {
+    this.publish(
+      JSON.stringify({
+        channel: event.channel,
+        before: event.before.toString(),
+        after: event.after.toString()
+      })
+    );
   }
 }

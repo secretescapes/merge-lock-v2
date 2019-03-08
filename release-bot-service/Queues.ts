@@ -5,6 +5,7 @@ import {
   BranchHasPrValidator
 } from "./Validators";
 import * as _ from "underscore";
+import { QueueEventsManager } from "./Managers";
 
 export class SlackUser {
   private username: string;
@@ -85,6 +86,9 @@ export class Queue {
     return this.items.length === 0;
   }
 
+  toString(): string {
+    return JSON.stringify(this.items);
+  }
   getReleaseSlots(): ReleaseSlot[] {
     return this.items;
   }
@@ -165,7 +169,12 @@ class ReleaseSlotJSONWrapper {
 export class DynamoDBReleaseQueue extends ReleaseQueue {
   private dynamodb;
   private tableName: string;
-  constructor(wrapper: ReleaseQueueDynamoDBWrapper, dynamodb, tableName) {
+  constructor(
+    wrapper: ReleaseQueueDynamoDBWrapper,
+    dynamodb,
+    tableName,
+    queueEventManager?: QueueEventsManager
+  ) {
     super(wrapper.channel.S);
     this.dynamodb = dynamodb;
     this.tableName = tableName;
@@ -237,5 +246,15 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
     }
     console.log(`Updating Queue in DB: ${this.channel}`);
     await this.dynamodb.updateItem(expresion).promise();
+
+    try {
+      new QueueEventsManager().publishEvent({
+        channel: this.channel,
+        before: this,
+        after: newQueue
+      });
+    } catch (err) {
+      console.error(`Error publishing QueueChangedEvent`);
+    }
   }
 }

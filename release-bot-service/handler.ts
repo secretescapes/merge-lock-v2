@@ -1,6 +1,6 @@
 "use strict";
 
-import { ResponseManager, CommandEventManager } from "./Managers";
+import { ResponseManager, CommandEventsManager } from "./Managers";
 import { Command, CommandResult } from "./commands/Command";
 import { SlackCommandFactory } from "./commands/SlackCommandFactory";
 
@@ -17,7 +17,7 @@ module.exports.server = async event => {
 module.exports.dispatcher = async event => {
   console.log(JSON.stringify(event));
   try {
-    await new CommandEventManager(REGION, COMMAND_TOPIC).publish(
+    await new CommandEventsManager(REGION, COMMAND_TOPIC).publishEvent(
       JSON.stringify(event)
     );
   } catch (err) {

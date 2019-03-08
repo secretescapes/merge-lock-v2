@@ -34,6 +34,33 @@ custom:
             ],
           ],
       }
+  queueTopic: "${self:service}-${self:provider.stage}-queue"
+  queueTopicArn:
+    local: "arn:aws:sns:us-east-1:123456789012:${self:custom.queueTopic}"
+    dev:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.queueTopic}",
+            ],
+          ],
+      }
+    prod:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              "arn:aws:sns:${self:provider.region}:",
+              { "Ref": "AWS::AccountId" },
+              ":${self:custom.queueTopic}",
+            ],
+          ],
+      }
 
 provider:
   profile: release-bot
@@ -54,6 +81,10 @@ resources: # CloudFormation template syntax
       Type: AWS::SNS::Topic
       Properties:
         TopicName: ${self:custom.commandTopic}
+    queueTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:custom.queueTopic}
     userEventsDynamoDbTable:
       Type: "AWS::DynamoDB::Table"
       DeletionPolicy: Retain
@@ -102,3 +133,4 @@ functions:
       myRegion: ${opt:region, 'us-east-1'}
       dynamoDBUserTableName: ${self:custom.dynamoDBUserTableName}
       dynamoDBQueueTableName: ${self:custom.dynamoDBQueueTableName}
+      queueTopicArn: ${self:custom.queueTopicArn.${self:provider.stage}}
