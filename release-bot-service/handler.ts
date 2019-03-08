@@ -1,7 +1,8 @@
 "use strict";
 
 import { ResponseManager, CommandEventManager } from "./Managers";
-import { SlackCommandFactory, Command, CommandResult } from "./Commands";
+import { Command, CommandResult } from "./commands/Command";
+import { SlackCommandFactory } from "./commands/SlackCommandFactory";
 
 const REGION = process.env.myRegion || "";
 const COMMAND_TOPIC = process.env.commandTopicArn || "";
