@@ -180,6 +180,7 @@ functions:
       myRegion: ${opt:region, 'us-east-1'}
       dynamoDBQueueTableName: ${self:custom.dynamoDBQueueTableName}
       githubTopicArn: ${self:custom.githubTopicArn.${self:provider.stage}}
+      queueTopicArn: ${self:custom.queueTopicArn.${self:provider.stage}}
   slackNotifications:
     handler: handler.slackNotifications
     events:

@@ -1,8 +1,5 @@
 import { CommandResult } from "../Command";
-import {
-  GithubEvent,
-  PrEvent
-} from "../../managers/eventsManagers/GithubEvent";
+import { PrEvent } from "../../managers/eventsManagers/Events";
 import { GithubEventsManager } from "../../managers/eventsManagers/GithubEventsManager";
 import { RemoveFromQueueCommand } from "../queueCommands/RemoveFromQueueCommand";
 import { SlackChannel } from "../../Queues";
@@ -15,9 +12,10 @@ export class GithubMergeCommand extends RemoveFromQueueCommand {
     this.prEvent = prEvent;
   }
   async executeCmd(): Promise<CommandResult> {
-    await new GithubEventsManager(REGION, GITHUB_TOPIC).publishEvent(
-      new GithubEvent("MERGE", this.prEvent)
-    );
+    const a = await new GithubEventsManager(REGION, GITHUB_TOPIC).publishEvent({
+      eventType: "MERGE",
+      originalEvent: this.prEvent
+    });
     return super.executeCmd();
   }
 }

@@ -1,4 +1,4 @@
-import { DynamoDBReleaseQueue, SlackChannel } from "../../Queues";
+import { DynamoDBReleaseQueue, SlackChannel, ReleaseQueue } from "../../Queues";
 import { DynamoDBManager } from "./DynamoDBManager";
 export class DynamoDBQueueManager extends DynamoDBManager {
   /**
@@ -75,6 +75,9 @@ export class DynamoDBQueueManager extends DynamoDBManager {
             },
             repository: {
               S: repository
+            },
+            queue: {
+              S: new ReleaseQueue(channel).serialize()
             }
           },
           ConditionExpression: "attribute_not_exists(channel)",

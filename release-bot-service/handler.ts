@@ -6,15 +6,14 @@ import { Command, CommandResult } from "./commands/Command";
 import { SlackCommandFactory } from "./commands/commandFactories/SlackCommandFactory";
 import { GithubCommandFactory } from "./commands/commandFactories/GithubCommandFactory";
 import { CommandFactory } from "./commands/commandFactories/CommandFactory";
-import {
-  REGION,
-  COMMAND_TOPIC,
-  SLACK_INCOMING_WEBHOOK_URL
-} from "./environment";
+import { REGION, COMMAND_TOPIC } from "./environment";
+import { NotificationCommandFactory } from "./commands/commandFactories/NotificationCommandFactory";
 
 module.exports.server = async event => {
   console.log(JSON.stringify(event));
-  const messages = event.Records.map(record => JSON.parse(record.Sns.Message));
+  const messages = event.Records.map(
+    record => JSON.parse(record.Sns.Message).body
+  );
   await Promise.all(
     messages.map(getProcessFunction(new SlackCommandFactory()))
   );
@@ -23,7 +22,7 @@ module.exports.server = async event => {
 
 module.exports.github = async event => {
   console.log(JSON.stringify(event));
-  await getProcessFunction(new GithubCommandFactory())(event.body);
+  await getProcessFunction(new GithubCommandFactory())(event.body.body);
   return;
 };
 
@@ -41,7 +40,10 @@ module.exports.dispatcher = async event => {
 
 module.exports.slackNotifications = async event => {
   console.log(JSON.stringify(event));
-  console.log(SLACK_INCOMING_WEBHOOK_URL);
+  const messages = event.Records.map(record => JSON.parse(record.Sns.Message));
+  await Promise.all(
+    messages.map(getProcessFunction(new NotificationCommandFactory()))
+  );
   return;
 };
 
@@ -49,12 +51,12 @@ function getProcessFunction(
   commandFactory: CommandFactory
 ): (message: any) => Promise<void> {
   return async (message: any) => {
-    console.log(`Processsing Message`);
-    const command: Command = await commandFactory.buildCommand(message.body);
+    console.log(`Processsing Message ${JSON.stringify(message)}`);
+    const command: Command = await commandFactory.buildCommand(message);
     const result: CommandResult = await command.execute();
-    if (message.body.response_url) {
+    if (message.response_url) {
       await new ResponseManager().postResponse(
-        message.body.response_url,
+        message.response_url,
         result.result
       );
     } else {

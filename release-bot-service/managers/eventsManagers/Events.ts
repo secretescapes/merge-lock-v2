@@ -1,11 +1,18 @@
-export class GithubEvent {
-  eventType: EventType;
+export type Event = GithubEvent | QueueChangedEvent;
+
+export type GithubEvent = {
+  eventType: "MERGE";
   originalEvent: PrEvent;
-  constructor(type: EventType, originalEvent: PrEvent) {
-    this.eventType = type;
-    this.originalEvent = originalEvent;
-  }
-}
+};
+
+//TODO: Move somewhere else
+export type QueueChangedEvent = {
+  eventType: "QUEUE_CHANGED";
+  channel: string;
+  before: string;
+  after: string;
+};
+type EventType = "MERGE" | "QUEUE_CHANGED";
 
 export type PrEvent = {
   action: "opened" | "closed";
@@ -29,5 +36,3 @@ export type PrEvent = {
     login: string;
   };
 };
-
-type EventType = "MERGE";

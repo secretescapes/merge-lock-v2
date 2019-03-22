@@ -140,6 +140,10 @@ export class ReleaseQueue extends Queue {
     return this.channel;
   }
 
+  serialize(): string {
+    return JSON.stringify({ items: this.items, channel: this.channel });
+  }
+
   equals(releaseQueue: ReleaseQueue): boolean {
     return super.equals(releaseQueue) && this.channel === releaseQueue.channel;
   }
@@ -198,10 +202,6 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
     );
   }
 
-  serialize(): string {
-    return JSON.stringify({ items: this.items, channel: this.channel });
-  }
-
   async add(releaseSlot: ReleaseSlot): Promise<DynamoDBReleaseQueue> {
     await this.validate(releaseSlot);
     const newQueue = this.clone();
@@ -246,23 +246,21 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
       UpdateExpression: "SET #Q = :q"
     };
     // Only update if value is still the same that was read before.
-    if (!this.isEmpty()) {
-      expresion["ExpressionAttributeValues"][":oldQ"] = { S: this.serialize() };
-      expresion["ConditionExpression"] = "#Q = :oldQ";
-    } else {
-      expresion["ConditionExpression"] = "attribute_not_exists(queue)";
-    }
+    expresion["ExpressionAttributeValues"][":oldQ"] = { S: this.serialize() };
+    expresion["ConditionExpression"] = "#Q = :oldQ";
+
     console.log(`Updating Queue in DB: ${this.channel}`);
     await this.dynamodb.updateItem(expresion).promise();
 
     try {
-      new QueueEventsManager().publishEvent({
+      await new QueueEventsManager().publishEvent({
+        eventType: "QUEUE_CHANGED",
         channel: this.channel,
-        before: this,
-        after: newQueue
+        before: this.toString(),
+        after: newQueue.toString()
       });
     } catch (err) {
-      console.error(`Error publishing QueueChangedEvent`);
+      console.error(`Error publishing QueueChangedEvent: ${err}`);
     }
   }
 }

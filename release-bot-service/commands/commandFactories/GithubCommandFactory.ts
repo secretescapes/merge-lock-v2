@@ -3,7 +3,7 @@ import { Command, UnknowCommand } from "../Command";
 import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
 import { SlackChannel } from "../../Queues";
 import { GithubMergeCommand } from "../githubCommands/GithubMergeCommand";
-import { PrEvent } from "../../managers/eventsManagers/GithubEvent";
+import { PrEvent } from "../../managers/eventsManagers/Events";
 import { REGION, QUEUES_TABLE_NAME } from "../../environment";
 
 export class GithubCommandFactory implements CommandFactory {
