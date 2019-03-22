@@ -6,8 +6,8 @@ import {
 import { GithubEventsManager } from "../../managers/eventsManagers/GithubEventsManager";
 import { RemoveFromQueueCommand } from "../queueCommands/RemoveFromQueueCommand";
 import { SlackChannel } from "../../Queues";
-export const REGION = process.env.myRegion || "";
-const GITHUB_TOPIC = process.env.githubTopicArn || "";
+import { GITHUB_TOPIC, REGION } from "../../environment";
+
 export class GithubMergeCommand extends RemoveFromQueueCommand {
   prEvent: PrEvent;
   constructor(channel: SlackChannel, prEvent: PrEvent) {

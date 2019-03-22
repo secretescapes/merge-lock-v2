@@ -6,9 +6,7 @@ import { Command, CommandResult } from "./commands/Command";
 import { SlackCommandFactory } from "./commands/commandFactories/SlackCommandFactory";
 import { GithubCommandFactory } from "./commands/commandFactories/GithubCommandFactory";
 import { CommandFactory } from "./commands/commandFactories/CommandFactory";
-
-const REGION = process.env.myRegion || "";
-const COMMAND_TOPIC = process.env.commandTopicArn || "";
+import { REGION, COMMAND_TOPIC } from "./environment";
 
 module.exports.server = async event => {
   console.log(JSON.stringify(event));

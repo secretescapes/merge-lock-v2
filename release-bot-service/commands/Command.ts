@@ -1,7 +1,3 @@
-export const QUEUES_TABLE_NAME = process.env.dynamoDBQueueTableName || "";
-export const USERS_TABLE_NAME = process.env.dynamoDBUserTableName || "";
-export const REGION = process.env.myRegion || "";
-
 export class CommandResult {
   success: boolean;
   reason?: string;

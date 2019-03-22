@@ -1,7 +1,8 @@
-import { Command, CommandResult, QUEUES_TABLE_NAME, REGION } from "../Command";
+import { Command, CommandResult } from "../Command";
 import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
 import { DynamoDBReleaseQueue, ReleaseSlot, SlackChannel } from "../../Queues";
 import { SlackFormatter } from "../../Formatter";
+import { QUEUES_TABLE_NAME, REGION } from "../../environment";
 
 export class RemoveFromQueueCommand extends Command {
   private branch: string | null;
