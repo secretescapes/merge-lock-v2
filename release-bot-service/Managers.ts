@@ -1,4 +1,4 @@
-import { DynamoDBReleaseQueue, SlackUser, Queue } from "./Queues";
+import { DynamoDBReleaseQueue, SlackUser, Queue, SlackChannel } from "./Queues";
 const AWS = require("aws-sdk");
 const axios = require("axios");
 class DynamoDBManager {
@@ -37,9 +37,7 @@ export class DynamoDBQueueManager extends DynamoDBManager {
     );
   }
 
-  async getQueueByRepository(
-    repo: string
-  ): Promise<DynamoDBReleaseQueue | null> {
+  async getChannelByRepository(repo: string): Promise<SlackChannel | null> {
     console.log(`Searching queue by repo [${repo}]`);
     try {
       const response = await this.dynamodb
@@ -55,11 +53,12 @@ export class DynamoDBQueueManager extends DynamoDBManager {
         .promise();
       console.log(`Response: ${JSON.stringify(response)}`);
       if (response.Items.length > 0) {
-        return new DynamoDBReleaseQueue(
+        const channelStr = new DynamoDBReleaseQueue(
           response.Items[0],
           this.dynamodb,
           this.tableName
-        );
+        ).getChannel();
+        return SlackChannel.parseFromString(channelStr);
       }
     } catch (err) {
       console.error(`Error scanning DB: ${err}`);

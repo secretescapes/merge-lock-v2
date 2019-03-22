@@ -5,6 +5,7 @@ import { addToQueueCommand } from "./addToQueueCommand";
 import { CreateQueueCommand } from "./CreateQueueCommand";
 import { ListCommand } from "./ListCommand";
 import { RemoveFromQueueCommand } from "./RemoveFromQueueCommand";
+import { CommandFactory } from "../CommandFactory";
 
 class Body {
   token: string;
@@ -19,8 +20,8 @@ class Body {
   response_url: string;
 }
 
-export class SlackCommandFactory {
-  buildCommand(body: Body): Command {
+export class SlackCommandFactory implements CommandFactory {
+  async buildCommand(body: Body): Promise<Command> {
     const [command, ...args] = body.text.split(" ");
     switch (command) {
       case "list":

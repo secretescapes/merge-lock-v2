@@ -1,25 +1,26 @@
 "use strict";
 
-import {
-  ResponseManager,
-  CommandEventsManager,
-  PrEvent,
-  GithubEvent,
-  GithubEventsManager,
-  DynamoDBQueueManager
-} from "./Managers";
+import { ResponseManager, CommandEventsManager } from "./Managers";
 import { Command, CommandResult } from "./commands/Command";
 import { SlackCommandFactory } from "./commands/SlackCommandFactory";
-import { DynamoDBReleaseQueue } from "./Queues";
+import { GithubCommandFactory } from "./GithubCommandFactory";
+import { CommandFactory } from "./CommandFactory";
 
 const REGION = process.env.myRegion || "";
 const COMMAND_TOPIC = process.env.commandTopicArn || "";
-const GITHUB_TOPIC = process.env.githubTopicArn || "";
 
 module.exports.server = async event => {
   console.log(JSON.stringify(event));
   const messages = event.Records.map(record => JSON.parse(record.Sns.Message));
-  await Promise.all(messages.map(processMessage));
+  await Promise.all(
+    messages.map(getProcessFunction(new SlackCommandFactory()))
+  );
+  return;
+};
+
+module.exports.github = async event => {
+  console.log(JSON.stringify(event));
+  await getProcessFunction(new GithubCommandFactory())(event.body);
   return;
 };
 
@@ -35,34 +36,20 @@ module.exports.dispatcher = async event => {
   return { text: "OK" };
 };
 
-module.exports.github = async event => {
-  console.log(JSON.stringify(event));
-
-  const prEvent: PrEvent = event.body;
-  switch (prEvent.action) {
-    case "closed":
-      if (prEvent.pull_request.merged) {
-        // PR Has been merged
-        const queue: DynamoDBReleaseQueue | null = await new DynamoDBQueueManager(
-          process.env.dynamoDBQueueTableName || "",
-          REGION
-        ).getQueueByRepository(prEvent.repository.full_name);
-        if (queue) {
-          await queue.remove(prEvent.pull_request.head.ref);
-        }
-      }
-
-      await new GithubEventsManager(REGION, GITHUB_TOPIC).publishEvent(
-        new GithubEvent("MERGE", prEvent)
+function getProcessFunction(
+  commandFactory: CommandFactory
+): (message: any) => Promise<void> {
+  return async (message: any) => {
+    console.log(`Processsing Message`);
+    const command: Command = await commandFactory.buildCommand(message.body);
+    const result: CommandResult = await command.execute();
+    if (message.body.response_url) {
+      await new ResponseManager().postResponse(
+        message.body.response_url,
+        result.result
       );
-      break;
-  }
-};
-async function processMessage(message) {
-  const command: Command = new SlackCommandFactory().buildCommand(message.body);
-  const result: CommandResult = await command.execute();
-  await new ResponseManager().postResponse(
-    message.body.response_url,
-    result.result
-  );
+    } else {
+      console.log(`Skipping sending response`);
+    }
+  };
 }

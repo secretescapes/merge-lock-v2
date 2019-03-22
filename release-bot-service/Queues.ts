@@ -40,6 +40,14 @@ export class SlackChannel {
   toString(): string {
     return `<#${this.channelId}|${this.channelName}>`;
   }
+
+  static parseFromString(str: string): SlackChannel | null {
+    const match = /^\<#([0-9,A-Z]{9})\|(.{1,21})\>$/.exec(str);
+    if (match && match.length === 3) {
+      return new SlackChannel(match[2], match[1]);
+    }
+    return null;
+  }
 }
 export class ReleaseSlot {
   private user: SlackUser;
