@@ -1,5 +1,9 @@
 import { CommandResult } from "../Command";
-import { PrEvent, GithubEventsManager, GithubEvent } from "../../Managers";
+import {
+  GithubEvent,
+  PrEvent
+} from "../../managers/eventsManagers/GithubEvent";
+import { GithubEventsManager } from "../../managers/eventsManagers/GithubEventsManager";
 import { RemoveFromQueueCommand } from "../queueCommands/RemoveFromQueueCommand";
 import { SlackChannel } from "../../Queues";
 export const REGION = process.env.myRegion || "";

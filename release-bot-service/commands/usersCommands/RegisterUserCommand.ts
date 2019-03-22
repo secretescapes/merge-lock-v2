@@ -1,5 +1,5 @@
 import { SlackUser } from "../../Queues";
-import { DynamoDBUserManager } from "../../Managers";
+import { DynamoDBUserManager } from "../../managers/dynamoDBManagers/DynamoDBUserManager";
 import { Command, CommandResult, USERS_TABLE_NAME, REGION } from "../Command";
 export class RegisterUserCommand extends Command {
   private user: SlackUser | null;

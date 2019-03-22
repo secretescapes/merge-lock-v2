@@ -4,7 +4,7 @@ import {
   ReleaseSlot,
   SlackChannel
 } from "../../Queues";
-import { DynamoDBQueueManager } from "../../Managers";
+import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
 import { SlackFormatter } from "../../Formatter";
 import { Command, CommandResult, QUEUES_TABLE_NAME, REGION } from "../Command";
 export class addToQueueCommand extends Command {

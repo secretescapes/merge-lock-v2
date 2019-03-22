@@ -1,11 +1,12 @@
 import { CommandFactory } from "./CommandFactory";
 import { Command, UnknowCommand } from "../Command";
-import { PrEvent, DynamoDBQueueManager } from "../../Managers";
+import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
 import { SlackChannel } from "../../Queues";
 import {
   REGION,
   GithubMergeCommand
 } from "../githubCommands/GithubMergeCommand";
+import { PrEvent } from "../../managers/eventsManagers/GithubEvent";
 
 export class GithubCommandFactory implements CommandFactory {
   async buildCommand(prEvent: PrEvent): Promise<Command> {

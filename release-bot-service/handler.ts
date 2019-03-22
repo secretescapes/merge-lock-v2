@@ -1,6 +1,7 @@
 "use strict";
 
-import { ResponseManager, CommandEventsManager } from "./Managers";
+import { CommandEventsManager } from "./managers/eventsManagers/CommandEventsManager";
+import { ResponseManager } from "./managers/ResponseManager";
 import { Command, CommandResult } from "./commands/Command";
 import { SlackCommandFactory } from "./commands/commandFactories/SlackCommandFactory";
 import { GithubCommandFactory } from "./commands/commandFactories/GithubCommandFactory";

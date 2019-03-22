@@ -1,5 +1,5 @@
 import { Command, CommandResult, QUEUES_TABLE_NAME, REGION } from "../Command";
-import { DynamoDBQueueManager } from "../../Managers";
+import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
 import { DynamoDBReleaseQueue, ReleaseSlot, SlackChannel } from "../../Queues";
 import { SlackFormatter } from "../../Formatter";
 

@@ -5,7 +5,7 @@ import {
   BranchHasPrValidator
 } from "./Validators";
 import * as _ from "underscore";
-import { QueueEventsManager } from "./Managers";
+import { QueueEventsManager } from "./managers/eventsManagers/QueueEventsManager";
 
 export class SlackUser {
   private username: string;
