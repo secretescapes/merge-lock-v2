@@ -1,8 +1,12 @@
 service: release-bot-service
 
+# Requires a .env file with the following variables:
+#   SLACK_INCOMING_WEBHOOK_URL
+
 plugins:
   - serverless-pseudo-parameters
   - serverless-plugin-typescript
+  - serverless-dotenv-plugin
 
 custom:
   dynamoDBUserTableName: ${self:service}-users-${self:provider.stage}
@@ -176,3 +180,9 @@ functions:
       myRegion: ${opt:region, 'us-east-1'}
       dynamoDBQueueTableName: ${self:custom.dynamoDBQueueTableName}
       githubTopicArn: ${self:custom.githubTopicArn.${self:provider.stage}}
+  slackNotifications:
+    handler: handler.slackNotifications
+    events:
+      - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.queueTopic}
+    environment:
+      slackIncomingWebhookUrl: ${env:SLACK_INCOMING_WEBHOOK_URL}

@@ -6,7 +6,11 @@ import { Command, CommandResult } from "./commands/Command";
 import { SlackCommandFactory } from "./commands/commandFactories/SlackCommandFactory";
 import { GithubCommandFactory } from "./commands/commandFactories/GithubCommandFactory";
 import { CommandFactory } from "./commands/commandFactories/CommandFactory";
-import { REGION, COMMAND_TOPIC } from "./environment";
+import {
+  REGION,
+  COMMAND_TOPIC,
+  SLACK_INCOMING_WEBHOOK_URL
+} from "./environment";
 
 module.exports.server = async event => {
   console.log(JSON.stringify(event));
@@ -33,6 +37,12 @@ module.exports.dispatcher = async event => {
     return { text: "Something went wrong" };
   }
   return { text: "OK" };
+};
+
+module.exports.slackNotifications = async event => {
+  console.log(JSON.stringify(event));
+  console.log(SLACK_INCOMING_WEBHOOK_URL);
+  return;
 };
 
 function getProcessFunction(
