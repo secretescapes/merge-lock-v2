@@ -101,6 +101,19 @@ export class Queue {
     return this.items;
   }
 
+  static deserialize(str: string): Queue {
+    const obj = JSON.parse(str);
+    const queue: Queue = new Queue();
+    queue.items = obj.map(
+      itm =>
+        new ReleaseSlot(
+          new SlackUser(itm.user.username, itm.user.userId),
+          itm.branch
+        )
+    );
+    return queue;
+  }
+
   protected async validate(releaseSlot: ReleaseSlot) {}
 
   protected insertInItems(

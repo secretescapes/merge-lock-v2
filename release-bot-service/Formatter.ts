@@ -1,4 +1,4 @@
-import { ReleaseQueue, SlackUser } from "./Queues";
+import { ReleaseQueue, SlackUser, Queue } from "./Queues";
 interface Formatter<T> {
   format(obj: T): string;
 }
@@ -16,7 +16,7 @@ export class SlackFormatter implements Formatter<ReleaseQueue> {
     this.userFormatter = new SlackUserFormatter();
   }
 
-  format(releaseQueue: ReleaseQueue): string {
+  format(releaseQueue: Queue): string {
     console.log(
       `About to format: ${JSON.stringify(releaseQueue.getReleaseSlots())}`
     );
