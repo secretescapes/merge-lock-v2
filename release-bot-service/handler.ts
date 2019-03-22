@@ -2,9 +2,9 @@
 
 import { ResponseManager, CommandEventsManager } from "./Managers";
 import { Command, CommandResult } from "./commands/Command";
-import { SlackCommandFactory } from "./commands/SlackCommandFactory";
-import { GithubCommandFactory } from "./GithubCommandFactory";
-import { CommandFactory } from "./CommandFactory";
+import { SlackCommandFactory } from "./commands/commandFactories/SlackCommandFactory";
+import { GithubCommandFactory } from "./commands/commandFactories/GithubCommandFactory";
+import { CommandFactory } from "./commands/commandFactories/CommandFactory";
 
 const REGION = process.env.myRegion || "";
 const COMMAND_TOPIC = process.env.commandTopicArn || "";

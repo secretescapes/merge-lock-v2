@@ -1,7 +1,7 @@
-import { CommandResult } from "./commands/Command";
-import { PrEvent, GithubEventsManager, GithubEvent } from "./Managers";
-import { RemoveFromQueueCommand } from "./commands/RemoveFromQueueCommand";
-import { SlackChannel } from "./Queues";
+import { CommandResult } from "../Command";
+import { PrEvent, GithubEventsManager, GithubEvent } from "../../Managers";
+import { RemoveFromQueueCommand } from "../queueCommands/RemoveFromQueueCommand";
+import { SlackChannel } from "../../Queues";
 export const REGION = process.env.myRegion || "";
 const GITHUB_TOPIC = process.env.githubTopicArn || "";
 export class GithubMergeCommand extends RemoveFromQueueCommand {

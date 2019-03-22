@@ -1,7 +1,7 @@
-import { SlackChannel } from "../Queues";
-import { DynamoDBQueueManager } from "../Managers";
-import { SlackFormatter } from "../Formatter";
-import { Command, CommandResult, QUEUES_TABLE_NAME, REGION } from "./Command";
+import { SlackChannel } from "../../Queues";
+import { DynamoDBQueueManager } from "../../Managers";
+import { SlackFormatter } from "../../Formatter";
+import { Command, CommandResult, QUEUES_TABLE_NAME, REGION } from "../Command";
 export class ListCommand extends Command {
   private channel: SlackChannel;
   validate(): string | true {

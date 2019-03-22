@@ -3,10 +3,10 @@ import {
   DynamoDBReleaseQueue,
   ReleaseSlot,
   SlackChannel
-} from "../Queues";
-import { DynamoDBQueueManager } from "../Managers";
-import { SlackFormatter } from "../Formatter";
-import { Command, CommandResult, QUEUES_TABLE_NAME, REGION } from "./Command";
+} from "../../Queues";
+import { DynamoDBQueueManager } from "../../Managers";
+import { SlackFormatter } from "../../Formatter";
+import { Command, CommandResult, QUEUES_TABLE_NAME, REGION } from "../Command";
 export class addToQueueCommand extends Command {
   private user: SlackUser | null;
   private branch: string | null;

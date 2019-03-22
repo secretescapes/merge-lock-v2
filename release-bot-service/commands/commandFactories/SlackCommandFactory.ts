@@ -1,11 +1,11 @@
-import { SlackUser, SlackChannel } from "../Queues";
-import { Command, UnknowCommand } from "./Command";
-import { RegisterUserCommand } from "./RegisterUserCommand";
-import { addToQueueCommand } from "./addToQueueCommand";
-import { CreateQueueCommand } from "./CreateQueueCommand";
-import { ListCommand } from "./ListCommand";
-import { RemoveFromQueueCommand } from "./RemoveFromQueueCommand";
-import { CommandFactory } from "../CommandFactory";
+import { SlackUser, SlackChannel } from "../../Queues";
+import { Command, UnknowCommand } from "../Command";
+import { RegisterUserCommand } from "../usersCommands/RegisterUserCommand";
+import { addToQueueCommand } from "../queueCommands/addToQueueCommand";
+import { CreateQueueCommand } from "../queueCommands/CreateQueueCommand";
+import { ListCommand } from "../queueCommands/ListCommand";
+import { RemoveFromQueueCommand } from "../queueCommands/RemoveFromQueueCommand";
+import { CommandFactory } from "./CommandFactory";
 
 class Body {
   token: string;
