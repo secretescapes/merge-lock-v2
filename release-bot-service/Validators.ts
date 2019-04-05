@@ -25,11 +25,6 @@ export class BranchIsNotInQueueValidator implements Validator {
     queue: Queue,
     releaseSlot: ReleaseSlot
   ): Promise<ValidatorResult> {
-    console.log(
-      `Checking branch: ${JSON.stringify(queue)} - ${JSON.stringify(
-        releaseSlot
-      )}`
-    );
     return queue
       .getReleaseSlots()
       .map(rl => rl.getBranch())

@@ -6,6 +6,7 @@ import { CreateQueueCommand } from "../queueCommands/CreateQueueCommand";
 import { ListCommand } from "../queueCommands/ListCommand";
 import { RemoveFromQueueCommand } from "../queueCommands/RemoveFromQueueCommand";
 import { CommandFactory } from "./CommandFactory";
+import { MoveInQueueCommand } from "../queueCommands/MoveInQueueCommand";
 
 class Body {
   token: string;
@@ -25,21 +26,20 @@ export class SlackCommandFactory implements CommandFactory {
     const [command, ...args] = body.text.split(" ");
     switch (command) {
       case "list":
+        //list
         return new ListCommand(
           new SlackChannel(body.channel_name, body.channel_id)
         );
       case "add":
         // add ['me' | user] [branch] [position?]
-        let position =
-          args.length > 2 && parseInt(args[2]) != NaN ? parseInt(args[2]) : -1;
-
         return new addToQueueCommand(
           this.resolveUser(args[0], body.user_id, body.user_name),
           args[1],
           new SlackChannel(body.channel_name, body.channel_id),
-          position
+          args.length > 2 ? this.sanitizePosition(args[2]) : undefined
         );
       case "register":
+        //register ['me' | user] [githubUsername]
         return new RegisterUserCommand(
           this.resolveUser(args[0], body.user_id, body.user_name),
           args[1]
@@ -52,15 +52,26 @@ export class SlackCommandFactory implements CommandFactory {
           this.sanitizeSlackUrl(args[1])
         );
       case "remove":
+        //remove [branch]
         return new RemoveFromQueueCommand(
           args[0],
           new SlackChannel(body.channel_name, body.channel_id)
+        );
+      case "move":
+        //move [branch] [position]
+        return new MoveInQueueCommand(
+          args[0],
+          new SlackChannel(body.channel_name, body.channel_id),
+          this.sanitizePosition(args[1]) || null
         );
       default:
         return new UnknowCommand();
     }
   }
 
+  private sanitizePosition(str: string): number | undefined {
+    return parseInt(str) != NaN ? parseInt(str) : undefined;
+  }
   private sanitizeSlackUrl(url: string) {
     return url.replace(/[\<\>]/g, "");
   }

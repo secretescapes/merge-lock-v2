@@ -89,6 +89,10 @@ export class Queue {
     this.items = [];
   }
 
+  containsBranch(branch: string): boolean {
+    return this.items.map(item => item.getBranch()).indexOf(branch) > -1;
+  }
+
   equals(queue: Queue): boolean {
     if (queue.items.length !== this.items.length) {
       return false;
@@ -175,6 +179,11 @@ export class ReleaseQueue extends Queue {
   }
 
   protected async validate(releaseSlot: ReleaseSlot) {
+    console.log(
+      `Validating releaseQueue [${releaseSlot.getBranch()}] [${this.items.map(
+        itm => itm.getBranch()
+      )}]`
+    );
     super.validate(releaseSlot);
     const validation: ValidatorResult = await new CompositeValidator(
       new BranchIsNotInQueueValidator(),
@@ -182,6 +191,7 @@ export class ReleaseQueue extends Queue {
     ).validate(this, releaseSlot);
 
     if (validation.hasErrors()) {
+      console.log(`Validation errors ${validation.getErrors()}`);
       throw new ValidationError(validation.getErrors());
     }
   }
@@ -232,10 +242,10 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
     releaseSlot: ReleaseSlot,
     pos: number = -1
   ): Promise<DynamoDBReleaseQueue> {
+    console.log(`Adding ${releaseSlot.getBranch()} in position ${pos}...`);
     await this.validate(releaseSlot);
     const newQueue = this.clone();
     newQueue.items = this.insertInItems(releaseSlot, this.items, pos);
-
     await this.updateQueueInDB(newQueue);
 
     return newQueue;
@@ -248,6 +258,25 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
     return newQueue;
   }
 
+  async move(
+    branch: string,
+    newPosition: number
+  ): Promise<DynamoDBReleaseQueue> {
+    const newQueue = this.clone();
+    if (this.containsBranch(branch)) {
+      const releaseSlotToBeMoved = this.items.find(
+        item => item.getBranch() == branch
+      );
+      if (releaseSlotToBeMoved) {
+        //FIX THIS
+        newQueue.items = newQueue.removeFromItems(branch, this.items);
+        console.log(`removed. Adding again...`);
+        return newQueue.add(releaseSlotToBeMoved, newPosition);
+      }
+    }
+    return newQueue;
+  }
+
   private clone(): DynamoDBReleaseQueue {
     return new DynamoDBReleaseQueue(
       { channel: { S: this.channel } },
@@ -256,6 +285,7 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
     );
   }
   private async updateQueueInDB(newQueue: DynamoDBReleaseQueue) {
+    console.log(`Updating Queue in DB`);
     if (newQueue.equals(this)) {
       return;
     }

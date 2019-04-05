@@ -21,6 +21,7 @@ export class RemoveFromQueueCommand extends Command {
         this.channel.toString()
       );
       if (!this.branch) {
+        console.error(`This should never happen`);
         return { success: false, result: `Missing params` };
       }
       const newQueue = await queue.remove(this.branch);
