@@ -28,6 +28,14 @@ export class SlackUser {
   toString(): string {
     return `<@${this.user_id}|${this.username}>`;
   }
+
+  static parseFromString(str: string): SlackUser | null {
+    const match = /<@([a-z,A-Z,0-9]{9})\|([\w\.]+)>/.exec(str);
+    if (match && match.length === 3) {
+      return new SlackUser(match[2], match[1]);
+    }
+    return null;
+  }
 }
 
 export class SlackChannel {

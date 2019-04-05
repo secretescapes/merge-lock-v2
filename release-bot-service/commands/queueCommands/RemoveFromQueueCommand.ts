@@ -14,6 +14,7 @@ export class RemoveFromQueueCommand extends Command {
     this.channel = channel;
   }
   protected async executeCmd(): Promise<CommandResult> {
+    console.log(`Checking if item needs to be removed from queue...`);
     const dynamoDBManager = new DynamoDBQueueManager(QUEUES_TABLE_NAME, REGION);
     try {
       const queue: DynamoDBReleaseQueue = await dynamoDBManager.getQueue(

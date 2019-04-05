@@ -14,7 +14,7 @@ export class EventsManager {
           TopicArn: this.topic
         })
         .promise();
-      console.info("message published");
+      console.info(`message published in ${this.topic}`);
     } catch (err) {
       console.error(err);
       throw new Error("Error publishing event");

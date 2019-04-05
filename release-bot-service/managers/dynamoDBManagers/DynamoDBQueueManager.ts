@@ -27,33 +27,32 @@ export class DynamoDBQueueManager extends DynamoDBManager {
     return response.Item.slackWebhook.S;
   }
 
-  async getChannelByRepository(repo: string): Promise<SlackChannel | null> {
+  async getChannelAndWebhookByRepository(
+    repo: string
+  ): Promise<[SlackChannel, string] | null> {
     console.log(`Searching queue by repo [${repo}]`);
     try {
-      const response = await this.dynamodb
-        .scan({
-          ExpressionAttributeValues: {
-            ":repo": {
-              S: repo
-            }
-          },
-          FilterExpression: "repository = :repo",
-          TableName: this.tableName
-        })
-        .promise();
-      console.log(`Response: ${JSON.stringify(response)}`);
+      const response = await this.retrieveQueueDataForRepo(repo);
       if (response.Items.length > 0) {
-        const channelStr = new DynamoDBReleaseQueue(
-          response.Items[0],
-          this.dynamodb,
-          this.tableName
-        ).getChannel();
-        return SlackChannel.parseFromString(channelStr);
+        const slackChannel = SlackChannel.parseFromString(
+          response.Items[0].channel.S
+        );
+        if (slackChannel) {
+          return [slackChannel, response.Items[0].slackWebhook.S];
+        }
       }
     } catch (err) {
-      console.error(`Error scanning DB: ${err}`);
+      console.error(`Error scanning DB ${err}`);
     }
     return null;
+  }
+
+  async getChannelByRepository(repo: string): Promise<SlackChannel | null> {
+    console.log(`Searching queue by repo [${repo}]`);
+    const slackChannelAndWebhook:
+      | [SlackChannel, string]
+      | null = await this.getChannelAndWebhookByRepository(repo);
+    return slackChannelAndWebhook ? slackChannelAndWebhook[0] : null;
   }
   /**
    * Creates a queue for the channel provided if none exists already.
@@ -111,6 +110,20 @@ export class DynamoDBQueueManager extends DynamoDBManager {
             S: channel
           }
         },
+        TableName: this.tableName
+      })
+      .promise();
+  }
+
+  private async retrieveQueueDataForRepo(repo: string): Promise<any> {
+    return await this.dynamodb
+      .scan({
+        ExpressionAttributeValues: {
+          ":repo": {
+            S: repo
+          }
+        },
+        FilterExpression: "repository = :repo",
         TableName: this.tableName
       })
       .promise();

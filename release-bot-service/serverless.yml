@@ -185,7 +185,9 @@ functions:
     handler: handler.slackNotifications
     events:
       - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.queueTopic}
+      - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.githubTopic}
     environment:
+      dynamoDBUserTableName: ${self:custom.dynamoDBUserTableName}
       myRegion: ${opt:region, 'us-east-1'}
       dynamoDBQueueTableName: ${self:custom.dynamoDBQueueTableName}
       githubTopicArn: ${self:custom.githubTopicArn.${self:provider.stage}}

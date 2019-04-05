@@ -1,8 +1,12 @@
-export type Event = GithubEvent | QueueChangedEvent;
+export type Event = GithubMergeEvent | QueueChangedEvent;
 
-export type GithubEvent = {
+export type GithubMergeEvent = {
   eventType: "MERGE";
-  originalEvent: PrEvent;
+  pullRequestTitle: string;
+  pullRequestUrl: string;
+  branchName: string;
+  repoName: string;
+  mergedBy: string;
 };
 
 //TODO: Move somewhere else

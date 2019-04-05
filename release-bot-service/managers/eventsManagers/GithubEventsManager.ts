@@ -1,7 +1,7 @@
 import { EventsManager } from "./EventsManager";
-import { GithubEvent } from "./Events";
+import { GithubMergeEvent } from "./Events";
 export class GithubEventsManager extends EventsManager {
-  async publishEvent(event: GithubEvent) {
+  async publishEvent(event: GithubMergeEvent) {
     await this.publish(JSON.stringify(event));
   }
 }

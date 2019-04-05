@@ -12,9 +12,14 @@ export class GithubMergeCommand extends RemoveFromQueueCommand {
     this.prEvent = prEvent;
   }
   async executeCmd(): Promise<CommandResult> {
-    const a = await new GithubEventsManager(REGION, GITHUB_TOPIC).publishEvent({
+    console.log(`New merge, notifiying`);
+    await new GithubEventsManager(REGION, GITHUB_TOPIC).publishEvent({
       eventType: "MERGE",
-      originalEvent: this.prEvent
+      pullRequestTitle: this.prEvent.pull_request.title,
+      pullRequestUrl: this.prEvent.pull_request.html_url,
+      branchName: this.prEvent.pull_request.head.ref,
+      repoName: this.prEvent.repository.full_name,
+      mergedBy: this.prEvent.pull_request.merged_by.login
     });
     return super.executeCmd();
   }

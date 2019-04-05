@@ -64,12 +64,7 @@ export class SlackCommandFactory implements CommandFactory {
     if (arg.toLowerCase() === "me") {
       return new SlackUser(invokerUserName, invokerUserId);
     } else {
-      const regex = /<@([a-z,A-Z,0-9]{9})\|([\w\.]+)>/g;
-      const match = regex.exec(arg);
-      if (!match || match.length < 3) {
-        return null;
-      }
-      return new SlackUser(match[2], match[1]);
+      return SlackUser.parseFromString(arg);
     }
   }
 }

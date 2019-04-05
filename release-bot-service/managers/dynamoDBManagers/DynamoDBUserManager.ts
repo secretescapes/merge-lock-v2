@@ -21,4 +21,30 @@ export class DynamoDBUserManager extends DynamoDBManager {
       throw err;
     }
   }
+
+  async getSlackUserByGithubUsername(
+    githubUsername: string
+  ): Promise<SlackUser | null> {
+    console.log(`Searching user by github username ${githubUsername}`);
+    try {
+      const response = await this.dynamodb
+        .scan({
+          ExpressionAttributeValues: {
+            ":githubUsername": {
+              S: githubUsername
+            }
+          },
+          FilterExpression: "githubUsername = :githubUsername",
+          TableName: this.tableName
+        })
+        .promise();
+      if (response.Items.length > 0) {
+        return SlackUser.parseFromString(response.Items[0].username.S);
+      }
+    } catch (err) {
+      console.error(`Error scanning user DB: ${err}`);
+    }
+
+    return null;
+  }
 }

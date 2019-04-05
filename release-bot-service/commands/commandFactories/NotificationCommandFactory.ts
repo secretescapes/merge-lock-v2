@@ -2,6 +2,7 @@ import { CommandFactory } from "./CommandFactory";
 import { Command } from "../Command";
 import { Event } from "../../managers/eventsManagers/Events";
 import { QueueChangedCommand } from "../notificationCommands/QueueChangedCommand";
+import { NotifyMergeCommand } from "../notificationCommands/NotifyMergeCommand";
 export class NotificationCommandFactory implements CommandFactory {
   async buildCommand(input: Event): Promise<Command> {
     switch (input.eventType) {
@@ -12,7 +13,7 @@ export class NotificationCommandFactory implements CommandFactory {
           input.after
         );
       case "MERGE":
-        break;
+        return new NotifyMergeCommand(input);
       default:
         break;
     }
