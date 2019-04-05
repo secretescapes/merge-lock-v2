@@ -12,15 +12,19 @@ export class addToQueueCommand extends Command {
   private user: SlackUser | null;
   private branch: string | null;
   private channel: SlackChannel;
+  private position: number | null;
+
   constructor(
     user: SlackUser | null,
     branch: string | null,
-    channel: SlackChannel
+    channel: SlackChannel,
+    position: number | null = -1
   ) {
     super();
     this.user = user;
     this.branch = branch;
     this.channel = channel;
+    this.position = position;
   }
   validate(): string | true {
     if (!this.user) {
@@ -40,7 +44,10 @@ export class addToQueueCommand extends Command {
       if (!this.user || !this.branch) {
         return { success: false, result: `Missing params` };
       }
-      const newQueue = await queue.add(new ReleaseSlot(this.user, this.branch));
+      const newQueue = await queue.add(
+        new ReleaseSlot(this.user, this.branch),
+        this.position ? this.position - 1 : undefined
+      );
       return {
         success: true,
         result: `Added, here is the queue:\n${new SlackFormatter().format(

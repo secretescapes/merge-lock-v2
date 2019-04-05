@@ -126,10 +126,15 @@ export class Queue {
 
   protected insertInItems(
     item: ReleaseSlot,
-    releaseSlots: ReleaseSlot[]
+    releaseSlots: ReleaseSlot[],
+    pos: number = -1
   ): ReleaseSlot[] {
     const items = releaseSlots.map(itm => itm.clone());
-    items.push(item);
+    if (pos > -1) {
+      items.splice(pos, 0, item);
+    } else {
+      items.push(item);
+    }
     return items;
   }
 
@@ -223,10 +228,13 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
     );
   }
 
-  async add(releaseSlot: ReleaseSlot): Promise<DynamoDBReleaseQueue> {
+  async add(
+    releaseSlot: ReleaseSlot,
+    pos: number = -1
+  ): Promise<DynamoDBReleaseQueue> {
     await this.validate(releaseSlot);
     const newQueue = this.clone();
-    newQueue.items = this.insertInItems(releaseSlot, this.items);
+    newQueue.items = this.insertInItems(releaseSlot, this.items, pos);
 
     await this.updateQueueInDB(newQueue);
 

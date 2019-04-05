@@ -29,10 +29,15 @@ export class SlackCommandFactory implements CommandFactory {
           new SlackChannel(body.channel_name, body.channel_id)
         );
       case "add":
+        // add ['me' | user] [branch] [position?]
+        let position =
+          args.length > 2 && parseInt(args[2]) != NaN ? parseInt(args[2]) : -1;
+
         return new addToQueueCommand(
           this.resolveUser(args[0], body.user_id, body.user_name),
           args[1],
-          new SlackChannel(body.channel_name, body.channel_id)
+          new SlackChannel(body.channel_name, body.channel_id),
+          position
         );
       case "register":
         return new RegisterUserCommand(
