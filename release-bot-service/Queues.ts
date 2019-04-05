@@ -107,7 +107,7 @@ export class Queue {
     queue.items = obj.map(
       itm =>
         new ReleaseSlot(
-          new SlackUser(itm.user.username, itm.user.userId),
+          new SlackUser(itm.user.username, itm.user.user_id),
           itm.branch
         )
     );
@@ -266,6 +266,11 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
     await this.dynamodb.updateItem(expresion).promise();
 
     try {
+      console.log(
+        `Queue ${
+          this.channel
+        } changed:\nbeforeL\n${this.toString()}\nafter:\n${newQueue.toString()}`
+      );
       await new QueueEventsManager().publishEvent({
         eventType: "QUEUE_CHANGED",
         channel: this.channel,

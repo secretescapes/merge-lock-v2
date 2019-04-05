@@ -40,9 +40,11 @@ export class SlackCommandFactory implements CommandFactory {
           args[1]
         );
       case "create":
+        //create [repo] [slack webhook]
         return new CreateQueueCommand(
           new SlackChannel(body.channel_name, body.channel_id),
-          args[0]
+          args[0],
+          this.sanitizeSlackUrl(args[1])
         );
       case "remove":
         return new RemoveFromQueueCommand(
@@ -53,6 +55,11 @@ export class SlackCommandFactory implements CommandFactory {
         return new UnknowCommand();
     }
   }
+
+  private sanitizeSlackUrl(url: string) {
+    return url.replace(/[\<\>]/g, "");
+  }
+
   private resolveUser(arg, invokerUserId, invokerUserName): SlackUser | null {
     if (arg.toLowerCase() === "me") {
       return new SlackUser(invokerUserName, invokerUserId);

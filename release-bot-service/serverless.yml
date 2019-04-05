@@ -186,4 +186,7 @@ functions:
     events:
       - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.queueTopic}
     environment:
-      slackIncomingWebhookUrl: ${env:SLACK_INCOMING_WEBHOOK_URL}
+      myRegion: ${opt:region, 'us-east-1'}
+      dynamoDBQueueTableName: ${self:custom.dynamoDBQueueTableName}
+      githubTopicArn: ${self:custom.githubTopicArn.${self:provider.stage}}
+      queueTopicArn: ${self:custom.queueTopicArn.${self:provider.stage}}
