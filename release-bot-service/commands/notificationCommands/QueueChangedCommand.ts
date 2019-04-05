@@ -18,9 +18,6 @@ export class QueueChangedCommand extends Command {
   }
   protected async executeCmd(): Promise<CommandResult> {
     console.log(`Checking if the top has changed...`);
-    console.log(
-      `AFTER: ${JSON.stringify(Queue.deserialize(this.queueStrAfter))}`
-    );
     const before: Queue = Queue.deserialize(this.queueStrBefore);
     const after: Queue = Queue.deserialize(this.queueStrAfter);
     const isNewTop = this.isNewTop(before, after);
