@@ -1,8 +1,9 @@
 import { Command, CommandResult } from "../Command";
 import { Queue, ReleaseSlot } from "../../Queues";
 import { ResponseManager } from "../../managers/ResponseManager";
-import { SLACK_INCOMING_WEBHOOK_URL } from "../../environment";
 import { SlackFormatter } from "../../Formatter";
+import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
+import { QUEUES_TABLE_NAME, REGION } from "../../environment";
 
 export class QueueChangedCommand extends Command {
   queueStrBefore: string;
@@ -22,9 +23,21 @@ export class QueueChangedCommand extends Command {
     const isNewTop = this.isNewTop(before, after);
     if (isNewTop) {
       console.log(`Notifying (top has changed)...`);
-      // TODO: Send response to channel and include new status of the queue
+      console.log(`Retrieving slack webhook url...`);
+      const slackWebhook = await new DynamoDBQueueManager(
+        QUEUES_TABLE_NAME,
+        REGION
+      ).getSlackWebhookForChannel(this.channelStr);
+      if (!slackWebhook) {
+        console.error(`Couldn't find slackWebhook for ${this.channelStr}`);
+        return {
+          success: false,
+          result: `Couldn't find slackWebhook for ${this.channelStr}`
+        };
+      }
+      console.log(`retrieved slack webhook url [${slackWebhook}]`);
       await new ResponseManager().postResponse(
-        SLACK_INCOMING_WEBHOOK_URL,
+        slackWebhook,
         `There is someone new at the top!\n${new SlackFormatter().format(
           after
         )}`

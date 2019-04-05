@@ -8,16 +8,7 @@ export class DynamoDBQueueManager extends DynamoDBManager {
    */
   async getQueue(channel: string): Promise<DynamoDBReleaseQueue> {
     console.log(`${channel} - ${this.tableName}`);
-    const response = await this.dynamodb
-      .getItem({
-        Key: {
-          channel: {
-            S: channel
-          }
-        },
-        TableName: this.tableName
-      })
-      .promise();
+    const response = await this.retrieveQueueDataForChannel(channel);
     if (!response.Item) {
       throw new Error("Couldn't find a queue for this channel");
     }
@@ -27,6 +18,15 @@ export class DynamoDBQueueManager extends DynamoDBManager {
       this.tableName
     );
   }
+
+  async getSlackWebhookForChannel(channel: string): Promise<string | null> {
+    const response = await this.retrieveQueueDataForChannel(channel);
+    if (!response.Item) {
+      throw new Error("Couldn't find a queue for this channel");
+    }
+    return response.Item.slackWebhook.S;
+  }
+
   async getChannelByRepository(repo: string): Promise<SlackChannel | null> {
     console.log(`Searching queue by repo [${repo}]`);
     try {
@@ -64,7 +64,8 @@ export class DynamoDBQueueManager extends DynamoDBManager {
    */
   async createQueue(
     channel: string,
-    repository: string
+    repository: string,
+    slackWebhook: string
   ): Promise<DynamoDBReleaseQueue> {
     try {
       await this.dynamodb
@@ -75,6 +76,9 @@ export class DynamoDBQueueManager extends DynamoDBManager {
             },
             repository: {
               S: repository
+            },
+            slackWebhook: {
+              S: slackWebhook
             },
             queue: {
               S: new ReleaseQueue(channel).serialize()
@@ -97,5 +101,18 @@ export class DynamoDBQueueManager extends DynamoDBManager {
       console.error(`Error creating queue: ${err}`);
       throw err;
     }
+  }
+
+  private async retrieveQueueDataForChannel(channel: string): Promise<any> {
+    return await this.dynamodb
+      .getItem({
+        Key: {
+          channel: {
+            S: channel
+          }
+        },
+        TableName: this.tableName
+      })
+      .promise();
   }
 }

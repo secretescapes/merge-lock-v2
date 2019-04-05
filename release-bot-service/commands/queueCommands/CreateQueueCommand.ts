@@ -5,20 +5,27 @@ import { QUEUES_TABLE_NAME, REGION } from "../../environment";
 export class CreateQueueCommand extends Command {
   private channel: SlackChannel;
   private repository: string | null;
-  constructor(channel: SlackChannel, repository: string) {
+  private slackWebhook: string | null;
+  constructor(
+    channel: SlackChannel,
+    repository: string | null,
+    slackWebhook: string | null
+  ) {
     super();
     this.channel = channel;
     this.repository = repository;
+    this.slackWebhook = slackWebhook;
   }
   protected async executeCmd(): Promise<CommandResult> {
     const dynamoDBManager = new DynamoDBQueueManager(QUEUES_TABLE_NAME, REGION);
     try {
-      if (!this.repository) {
+      if (!this.repository || !this.slackWebhook) {
         return { success: true, result: `Missing params` };
       }
       await dynamoDBManager.createQueue(
         this.channel.toString(),
-        this.repository
+        this.repository,
+        this.slackWebhook
       );
       return { success: true, result: `Queue has been created` };
     } catch (err) {
@@ -38,6 +45,13 @@ export class CreateQueueCommand extends Command {
     }
     if (!/.*\/.*/g.test(this.repository)) {
       return `Please, provide the full repository name ([owner]/[repo name])`;
+    }
+    if (!this.slackWebhook) {
+      return `Please, provide a valid webhook`;
+    }
+
+    if (!/https:\/\/hooks.slack.com\/services.*/g.test(this.slackWebhook)) {
+      return `Please, provide a valid webhook url`;
     }
     return true;
   }
