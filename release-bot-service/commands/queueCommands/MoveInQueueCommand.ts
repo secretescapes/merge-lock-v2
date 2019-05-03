@@ -4,15 +4,18 @@ import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQu
 import { QUEUES_TABLE_NAME, REGION } from "../../environment";
 import { SlackFormatter } from "../../Formatter";
 
+type BACK = "BACK";
+type POSITION = BACK | number;
+
 export class MoveInQueueCommand extends Command {
   private branch: string | null;
   private channel: SlackChannel;
-  private position: number | null;
+  private position: POSITION | null;
 
   constructor(
     branch: string | null,
     channel: SlackChannel,
-    position: number | null
+    position: POSITION | null
   ) {
     super();
     this.branch = branch;
@@ -32,7 +35,8 @@ export class MoveInQueueCommand extends Command {
         this.channel.toString()
       );
       console.log(`Queue retrieved.`);
-      const newQueue = await queue.move(this.branch, this.position - 1);
+      const newPosition = this.resolveNewPosition(queue);
+      const newQueue = await queue.move(this.branch, newPosition);
       return {
         success: true,
         result: `Moved, here is the queue:\n${new SlackFormatter().format(
@@ -48,7 +52,23 @@ export class MoveInQueueCommand extends Command {
     if (!this.branch) {
       return `Please, provide a valid branch`;
     }
-    if (!this.position || this.position < 1) {
+    if (!this.position) {
+      return `Please, provide a valid position (>0)`;
+    }
+    return this.validatePosition();
+  }
+
+  private resolveNewPosition(queue: DynamoDBReleaseQueue): number {
+    if (!this.position || !this.branch) {
+      throw Error();
+    }
+    if (this.position === "BACK") {
+      return queue.indexOf(this.branch) + 1;
+    }
+    return this.position - 1;
+  }
+  private validatePosition(): string | true {
+    if (<number>this.position < 1) {
       return `Please, provide a valid position (>0)`;
     }
     return true;

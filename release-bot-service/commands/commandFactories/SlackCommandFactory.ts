@@ -64,6 +64,13 @@ export class SlackCommandFactory implements CommandFactory {
           new SlackChannel(body.channel_name, body.channel_id),
           this.sanitizePosition(args[1]) || null
         );
+      case "back":
+        // back [branch]
+        return new MoveInQueueCommand(
+          args[0],
+          new SlackChannel(body.channel_name, body.channel_id),
+          "BACK"
+        );
       default:
         return new UnknowCommand();
     }

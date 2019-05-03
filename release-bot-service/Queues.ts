@@ -90,8 +90,10 @@ export class Queue {
     this.items = [];
   }
 
-  containsBranch(branch: string): boolean {
-    return this.items.map(item => item.getBranch()).indexOf(branch) > -1;
+  indexOf(branch: string): number {
+    return this.items.findIndex(
+      releaseSlot => releaseSlot.getBranch() === branch
+    );
   }
 
   equals(queue: Queue): boolean {
@@ -267,9 +269,10 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
   ): Promise<DynamoDBReleaseQueue> {
     console.log(`Moving branch ${branch} to position ${newPosition}...`);
     const newQueue = this.clone();
-    if (this.containsBranch(branch)) {
+    const currentPosition = this.indexOf(branch);
+    if (currentPosition > -1) {
       const releaseSlotToBeMoved = this.items.find(
-        item => item.getBranch() == branch
+        item => item.getBranch() === branch
       );
       if (releaseSlotToBeMoved) {
         const currentPosition = this.items.indexOf(releaseSlotToBeMoved);
