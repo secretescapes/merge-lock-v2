@@ -8,6 +8,7 @@ import { GithubCommandFactory } from "./commands/commandFactories/GithubCommandF
 import { CommandFactory } from "./commands/commandFactories/CommandFactory";
 import { REGION, COMMAND_TOPIC } from "./environment";
 import { NotificationCommandFactory } from "./commands/commandFactories/NotificationCommandFactory";
+import { JenkinsCommandFactory } from "./commands/commandFactories/JenkinsCommandFactory";
 
 module.exports.server = async event => {
   console.log(JSON.stringify(event));
@@ -43,6 +44,15 @@ module.exports.slackNotifications = async event => {
   const messages = event.Records.map(record => JSON.parse(record.Sns.Message));
   await Promise.all(
     messages.map(getProcessFunction(new NotificationCommandFactory()))
+  );
+  return;
+};
+
+module.exports.jenkinsTrigger = async event => {
+  console.log(JSON.stringify(event));
+  const messages = event.Records.map(record => JSON.parse(record.Sns.Message));
+  await Promise.all(
+    messages.map(getProcessFunction(new JenkinsCommandFactory()))
   );
   return;
 };

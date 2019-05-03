@@ -151,6 +151,21 @@ export class Queue {
   ): ReleaseSlot[] {
     return items.filter(item => item.getBranch() !== branch);
   }
+
+  static isNewTop(before: Queue, after: Queue): boolean {
+    if (!after.isEmpty()) {
+      if (before.isEmpty()) {
+        return true;
+      } else {
+        const previousFirst: ReleaseSlot = before.getReleaseSlots()[0];
+        const currentFirst: ReleaseSlot = after.getReleaseSlots()[0];
+        if (!previousFirst.equals(currentFirst)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 }
 
 export class ValidationError extends Error {

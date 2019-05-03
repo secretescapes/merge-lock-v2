@@ -24,6 +24,7 @@
     "@types/underscore": "^1.8.13",
     "array-move": "^2.1.0",
     "axios": "^0.18.0",
+    "form-data": "^2.3.3",
     "serverless-pseudo-parameters": "^2.4.0",
     "underscore": "^1.9.1"
   }

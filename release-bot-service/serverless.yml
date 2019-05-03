@@ -192,3 +192,9 @@ functions:
       dynamoDBQueueTableName: ${self:custom.dynamoDBQueueTableName}
       githubTopicArn: ${self:custom.githubTopicArn.${self:provider.stage}}
       queueTopicArn: ${self:custom.queueTopicArn.${self:provider.stage}}
+  jenkinsTrigger:
+    handler: handler.jenkinsTrigger
+    events:
+      - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.queueTopic}
+    environment:
+      myRegion: ${opt:region, 'us-east-1'}

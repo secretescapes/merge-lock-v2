@@ -4,24 +4,12 @@ import { ResponseManager } from "../../managers/ResponseManager";
 import { SlackFormatter } from "../../Formatter";
 import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
 import { QUEUES_TABLE_NAME, REGION } from "../../environment";
+import { QueueChangedCommand } from "../QueueChangedCommand";
 
-export class QueueChangedCommand extends Command {
-  queueStrBefore: string;
-  queueStrAfter: string;
-  channelStr: string;
-
-  constructor(channel: string, before: string, after: string) {
-    super();
-    this.queueStrAfter = after;
-    this.queueStrBefore = before;
-    this.channelStr = channel;
-  }
+export class NotificationQueueChangedCommand extends QueueChangedCommand {
   protected async executeCmd(): Promise<CommandResult> {
     console.log(`Checking if the top has changed...`);
-    const before: Queue = Queue.deserialize(this.queueStrBefore);
-    const after: Queue = Queue.deserialize(this.queueStrAfter);
-    const isNewTop = this.isNewTop(before, after);
-    if (isNewTop) {
+    if (this.isNewTop()) {
       console.log(`Notifying (top has changed)...`);
       console.log(`Retrieving slack webhook url...`);
       const slackWebhook = await new DynamoDBQueueManager(
@@ -36,6 +24,7 @@ export class QueueChangedCommand extends Command {
         };
       }
       console.log(`retrieved slack webhook url [${slackWebhook}]`);
+      const after: Queue = this.getAfterQueue();
       await new ResponseManager().postResponse(
         slackWebhook,
         `There is someone new at the top!\n${new SlackFormatter().format(
@@ -45,23 +34,5 @@ export class QueueChangedCommand extends Command {
     }
 
     return { success: true, result: "" };
-  }
-  protected validate(): string | true {
-    return true;
-  }
-
-  private isNewTop(before: Queue, after: Queue) {
-    if (!after.isEmpty()) {
-      if (before.isEmpty()) {
-        return true;
-      } else {
-        const previousFirst: ReleaseSlot = before.getReleaseSlots()[0];
-        const currentFirst: ReleaseSlot = after.getReleaseSlots()[0];
-        if (!previousFirst.equals(currentFirst)) {
-          return true;
-        }
-      }
-    }
-    return false;
   }
 }
