@@ -32,7 +32,7 @@ export class MoveInQueueCommand extends Command {
         this.channel.toString()
       );
       console.log(`Queue retrieved.`);
-      const newQueue = await queue.move(this.branch, this.position);
+      const newQueue = await queue.move(this.branch, this.position - 1);
       return {
         success: true,
         result: `Moved, here is the queue:\n${new SlackFormatter().format(

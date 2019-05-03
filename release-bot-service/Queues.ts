@@ -5,6 +5,7 @@ import {
   BranchHasPrValidator
 } from "./Validators";
 import * as _ from "underscore";
+import * as arrayMove from "array-move";
 import { QueueEventsManager } from "./managers/eventsManagers/QueueEventsManager";
 
 export class SlackUser {
@@ -252,9 +253,11 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
   }
 
   async remove(branch: string): Promise<DynamoDBReleaseQueue> {
+    console.log(`Removing branch ${branch}...`);
     const newQueue = this.clone();
     newQueue.items = this.removeFromItems(branch, this.items);
     await this.updateQueueInDB(newQueue);
+    console.log(`Branch ${branch} removed`);
     return newQueue;
   }
 
@@ -262,16 +265,17 @@ export class DynamoDBReleaseQueue extends ReleaseQueue {
     branch: string,
     newPosition: number
   ): Promise<DynamoDBReleaseQueue> {
+    console.log(`Moving branch ${branch} to position ${newPosition}...`);
     const newQueue = this.clone();
     if (this.containsBranch(branch)) {
       const releaseSlotToBeMoved = this.items.find(
         item => item.getBranch() == branch
       );
       if (releaseSlotToBeMoved) {
-        //FIX THIS
-        newQueue.items = newQueue.removeFromItems(branch, this.items);
-        console.log(`removed. Adding again...`);
-        return newQueue.add(releaseSlotToBeMoved, newPosition);
+        const currentPosition = this.items.indexOf(releaseSlotToBeMoved);
+        newQueue.items = arrayMove(this.items, currentPosition, newPosition);
+        await this.updateQueueInDB(newQueue);
+        console.log(`Branch ${branch} moved to ${newPosition}`);
       }
     }
     return newQueue;

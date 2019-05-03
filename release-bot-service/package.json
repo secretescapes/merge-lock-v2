@@ -13,7 +13,7 @@
     "@types/mocha": "^5.2.6",
     "aws-sdk": "^2.361.0",
     "chai": "^4.2.0",
-    "mocha": "^6.0.2",
+    "mocha": "^6.1.4",
     "serverless-dotenv-plugin": "^2.0.1",
     "serverless-plugin-typescript": "^1.1.5",
     "ts-mockito": "^2.3.1",
@@ -22,6 +22,7 @@
   "dependencies": {
     "@types/node": "^11.9.5",
     "@types/underscore": "^1.8.13",
+    "array-move": "^2.1.0",
     "axios": "^0.18.0",
     "serverless-pseudo-parameters": "^2.4.0",
     "underscore": "^1.9.1"
