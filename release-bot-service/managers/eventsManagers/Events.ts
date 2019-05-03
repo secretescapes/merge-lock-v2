@@ -16,7 +16,6 @@ export type QueueChangedEvent = {
   before: string;
   after: string;
 };
-type EventType = "MERGE" | "QUEUE_CHANGED";
 
 export type PrEvent = {
   action: "opened" | "closed";
