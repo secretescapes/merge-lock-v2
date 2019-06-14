@@ -1,7 +1,6 @@
 service: release-bot-service
 
 # Requires a .env file with the following variables:
-#   CI_URL
 
 plugins:
   - serverless-pseudo-parameters
@@ -80,7 +79,6 @@ custom:
           ],
       }
     ciTopicArn: ${self:custom.ciTopicArn}
-    ciUrl: ${env:CI_URL}
     commandTopicArn: ${self:custom.commandTopicArn}
     dynamoDBQueueTableName: ${self:custom.dynamoDBQueueTableName}
     dynamoDBUserTableName: ${self:custom.dynamoDBUserTableName}

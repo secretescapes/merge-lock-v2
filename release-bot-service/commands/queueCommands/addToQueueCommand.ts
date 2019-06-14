@@ -36,7 +36,7 @@ export class addToQueueCommand extends Command {
     return true;
   }
   async executeCmd(): Promise<CommandResult> {
-    const dynamoDBManager = new DynamoDBQueueManager(QUEUES_TABLE_NAME, REGION);
+    const dynamoDBManager = new DynamoDBQueueManager();
     try {
       const queue: DynamoDBReleaseQueue = await dynamoDBManager.getQueue(
         this.channel.toString()

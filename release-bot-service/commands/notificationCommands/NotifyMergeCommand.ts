@@ -13,10 +13,7 @@ export class NotifyMergeCommand extends Command {
     this.githubMergeEvent = event;
   }
   protected async executeCmd(): Promise<CommandResult> {
-    const dynamoDBQueueManager: DynamoDBQueueManager = new DynamoDBQueueManager(
-      QUEUES_TABLE_NAME,
-      REGION
-    );
+    const dynamoDBQueueManager: DynamoDBQueueManager = new DynamoDBQueueManager();
     const repo = this.githubMergeEvent.repoName;
     console.log(`Retrieving channel for repo ${repo}`);
     const [
@@ -38,11 +35,9 @@ export class NotifyMergeCommand extends Command {
     );
     console.log(`Retrieving user from event....`);
     const mergedByUser: SlackUser | string =
-      (await new DynamoDBUserManager(
-        USERS_TABLE_NAME,
-        REGION
-      ).getSlackUserByGithubUsername(this.githubMergeEvent.mergedBy)) ||
-      this.githubMergeEvent.mergedBy;
+      (await new DynamoDBUserManager().getSlackUserByGithubUsername(
+        this.githubMergeEvent.mergedBy
+      )) || this.githubMergeEvent.mergedBy;
     console.log(`user: ${mergedByUser}`);
 
     await new ResponseManager().postResponse(

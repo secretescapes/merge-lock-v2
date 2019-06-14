@@ -6,26 +6,35 @@ export class CreateQueueCommand extends Command {
   private channel: SlackChannel;
   private repository: string | null;
   private slackWebhook: string | null;
+  private ciUrl: string | null;
   constructor(
     channel: SlackChannel,
     repository: string | null,
-    slackWebhook: string | null
+    slackWebhook: string | null,
+    ciUrl: string | null
   ) {
     super();
     this.channel = channel;
     this.repository = repository;
     this.slackWebhook = slackWebhook;
+    this.ciUrl = ciUrl;
   }
   protected async executeCmd(): Promise<CommandResult> {
-    const dynamoDBManager = new DynamoDBQueueManager(QUEUES_TABLE_NAME, REGION);
+    const dynamoDBManager = new DynamoDBQueueManager();
     try {
-      if (!this.repository || !this.slackWebhook) {
+      if (
+        !this.channel ||
+        !this.repository ||
+        !this.slackWebhook ||
+        !this.ciUrl
+      ) {
         return { success: true, result: `Missing params` };
       }
       await dynamoDBManager.createQueue(
         this.channel.toString(),
         this.repository,
-        this.slackWebhook
+        this.slackWebhook,
+        this.ciUrl
       );
       return { success: true, result: `Queue has been created` };
     } catch (err) {
@@ -52,6 +61,10 @@ export class CreateQueueCommand extends Command {
 
     if (!/https:\/\/hooks.slack.com\/services.*/g.test(this.slackWebhook)) {
       return `Please, provide a valid webhook url`;
+    }
+
+    if (!this.ciUrl) {
+      return `Please, provide a valid CI url where I will send post requests when a new branch is on the top`;
     }
     return true;
   }

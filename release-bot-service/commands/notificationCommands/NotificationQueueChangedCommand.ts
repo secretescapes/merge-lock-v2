@@ -1,5 +1,5 @@
-import { Command, CommandResult } from "../Command";
-import { Queue, ReleaseSlot } from "../../Queues";
+import { CommandResult } from "../Command";
+import { Queue } from "../../Queues";
 import { ResponseManager } from "../../managers/ResponseManager";
 import { SlackFormatter } from "../../Formatter";
 import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
@@ -12,10 +12,9 @@ export class NotificationQueueChangedCommand extends QueueChangedCommand {
     if (this.isNewTop()) {
       console.log(`Notifying (top has changed)...`);
       console.log(`Retrieving slack webhook url...`);
-      const slackWebhook = await new DynamoDBQueueManager(
-        QUEUES_TABLE_NAME,
-        REGION
-      ).getSlackWebhookForChannel(this.channelStr);
+      const slackWebhook = await new DynamoDBQueueManager().getSlackWebhookForChannel(
+        this.channelStr
+      );
       if (!slackWebhook) {
         console.error(`Couldn't find slackWebhook for ${this.channelStr}`);
         return {

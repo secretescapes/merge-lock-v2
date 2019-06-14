@@ -10,7 +10,10 @@ export class JenkinsQueueChangedCommand extends QueueChangedCommand {
         .getBranch();
       try {
         console.log(`Triggering pipeline in branch ${branchAtTop}`);
-        await new JenkinsManager().triggerPipelineInBranch(branchAtTop);
+        await new JenkinsManager().triggerPipelineInBranch(
+          branchAtTop,
+          this.channelStr
+        );
       } catch (err) {
         console.error(`Error sending request to Jenkins ${err}`);
         return {

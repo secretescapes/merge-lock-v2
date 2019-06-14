@@ -19,6 +19,13 @@ export class DynamoDBQueueManager extends DynamoDBManager {
     );
   }
 
+  async getCiUrlForChannel(channel: string): Promise<string | null> {
+    const response = await this.retrieveQueueDataForChannel(channel);
+    if (!response.Item) {
+      throw new Error(`Couldn't find a queue for this channel ${channel}`);
+    }
+    return response.Item.ciUrl.S;
+  }
   async getSlackWebhookForChannel(channel: string): Promise<string | null> {
     const response = await this.retrieveQueueDataForChannel(channel);
     if (!response.Item) {
@@ -64,7 +71,8 @@ export class DynamoDBQueueManager extends DynamoDBManager {
   async createQueue(
     channel: string,
     repository: string,
-    slackWebhook: string
+    slackWebhook: string,
+    ciUrl: string
   ): Promise<DynamoDBReleaseQueue> {
     try {
       await this.dynamodb
@@ -78,6 +86,9 @@ export class DynamoDBQueueManager extends DynamoDBManager {
             },
             slackWebhook: {
               S: slackWebhook
+            },
+            ciUrl: {
+              S: ciUrl
             },
             queue: {
               S: new ReleaseQueue(channel).serialize()

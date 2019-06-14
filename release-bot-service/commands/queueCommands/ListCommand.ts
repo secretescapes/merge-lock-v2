@@ -14,10 +14,9 @@ export class ListCommand extends Command {
   }
   async executeCmd(): Promise<CommandResult> {
     try {
-      const queue = await new DynamoDBQueueManager(
-        QUEUES_TABLE_NAME,
-        REGION
-      ).getQueue(this.channel.toString());
+      const queue = await new DynamoDBQueueManager().getQueue(
+        this.channel.toString()
+      );
       return { success: true, result: new SlackFormatter().format(queue) };
     } catch (err) {
       console.error(`Error retrieving from dynamodb: ${err}`);

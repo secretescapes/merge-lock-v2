@@ -1,9 +1,11 @@
+import { QUEUES_TABLE_NAME, REGION } from "../../environment";
+
 const AWS = require("aws-sdk");
 export class DynamoDBManager {
   protected tableName: string;
   protected dynamodb: any;
-  constructor(tableName: string, region: string) {
-    this.tableName = tableName;
-    this.dynamodb = new AWS.DynamoDB({ region });
+  constructor() {
+    this.tableName = QUEUES_TABLE_NAME;
+    this.dynamodb = new AWS.DynamoDB({ REGION });
   }
 }

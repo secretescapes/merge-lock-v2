@@ -12,10 +12,9 @@ export class GithubCommandFactory implements CommandFactory {
       case "closed":
         if (prEvent.pull_request.merged) {
           // PR Has been merged
-          const slackChannel: SlackChannel | null = await new DynamoDBQueueManager(
-            QUEUES_TABLE_NAME,
-            REGION
-          ).getChannelByRepository(prEvent.repository.full_name);
+          const slackChannel: SlackChannel | null = await new DynamoDBQueueManager().getChannelByRepository(
+            prEvent.repository.full_name
+          );
           return slackChannel
             ? new GithubMergeCommand(slackChannel, prEvent)
             : new UnknowCommand();

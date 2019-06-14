@@ -15,7 +15,7 @@ export class RegisterUserCommand extends Command {
       if (!this.user || !this.githubUsername) {
         return { success: false, result: "Missing params" };
       }
-      await new DynamoDBUserManager(USERS_TABLE_NAME, REGION).updateUser(
+      await new DynamoDBUserManager().updateUser(
         this.user,
         this.githubUsername
       );

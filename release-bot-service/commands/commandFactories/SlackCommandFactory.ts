@@ -7,6 +7,7 @@ import { ListCommand } from "../queueCommands/ListCommand";
 import { RemoveFromQueueCommand } from "../queueCommands/RemoveFromQueueCommand";
 import { CommandFactory } from "./CommandFactory";
 import { MoveInQueueCommand } from "../queueCommands/MoveInQueueCommand";
+const decode = require("decode-html");
 
 class Body {
   token: string;
@@ -45,11 +46,12 @@ export class SlackCommandFactory implements CommandFactory {
           args[1]
         );
       case "create":
-        //create [repo] [slack webhook]
+        //create [repo] [slack webhook] [ci url]
         return new CreateQueueCommand(
           new SlackChannel(body.channel_name, body.channel_id),
           args[0],
-          this.sanitizeSlackUrl(args[1])
+          this.sanitizeSlackUrl(args[1]),
+          this.sanitizeSlackUrl(args[2])
         );
       case "remove":
         //remove [branch]
@@ -80,7 +82,7 @@ export class SlackCommandFactory implements CommandFactory {
     return parseInt(str) != NaN ? parseInt(str) : undefined;
   }
   private sanitizeSlackUrl(url: string) {
-    return url.replace(/[\<\>]/g, "");
+    return decode(url.replace(/[\<\>]/g, ""));
   }
 
   private resolveUser(arg, invokerUserId, invokerUserName): SlackUser | null {

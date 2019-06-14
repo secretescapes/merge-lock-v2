@@ -24,7 +24,7 @@ export class MoveInQueueCommand extends Command {
   }
 
   protected async executeCmd(): Promise<CommandResult> {
-    const dynamoDBManager = new DynamoDBQueueManager(QUEUES_TABLE_NAME, REGION);
+    const dynamoDBManager = new DynamoDBQueueManager();
     if (!this.branch || !this.position) {
       console.error(`This should never happen`);
       return { success: false, result: `Missing params` };
