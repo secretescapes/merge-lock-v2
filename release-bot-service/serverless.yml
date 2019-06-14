@@ -66,6 +66,27 @@ custom:
           ],
         ],
     }
+  env:
+    ciStatusUpdateUrl:
+      {
+        "Fn::Join":
+          [
+            "",
+            [
+              " https://",
+              { "Ref": "ApiGatewayRestApi" },
+              ".execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}/ci/statusUpdate",
+            ],
+          ],
+      }
+    ciTopicArn: ${self:custom.ciTopicArn}
+    ciUrl: ${env:CI_URL}
+    commandTopicArn: ${self:custom.commandTopicArn}
+    dynamoDBQueueTableName: ${self:custom.dynamoDBQueueTableName}
+    dynamoDBUserTableName: ${self:custom.dynamoDBUserTableName}
+    githubTopicArn: ${self:custom.githubTopicArn}
+    myRegion: ${opt:region, 'us-east-1'}
+    queueTopicArn: ${self:custom.queueTopicArn}
 
 provider:
   profile: release-bot
@@ -135,18 +156,12 @@ functions:
           path: slack/dispatcher
           method: post
           integration: lambda
-    environment:
-      commandTopicArn: ${self:custom.commandTopicArn}
-      myRegion: ${opt:region, 'us-east-1'}
+    environment: ${self:custom.env}
   server:
     handler: handler.server
     events:
       - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.commandTopic}
-    environment:
-      myRegion: ${opt:region, 'us-east-1'}
-      dynamoDBUserTableName: ${self:custom.dynamoDBUserTableName}
-      dynamoDBQueueTableName: ${self:custom.dynamoDBQueueTableName}
-      queueTopicArn: ${self:custom.queueTopicArn}
+    environment: ${self:custom.env}
   github:
     handler: handler.github
     events:
@@ -154,41 +169,18 @@ functions:
           path: releasebot/github
           method: post
           integration: lambda
-    environment:
-      myRegion: ${opt:region, 'us-east-1'}
-      dynamoDBQueueTableName: ${self:custom.dynamoDBQueueTableName}
-      githubTopicArn: ${self:custom.githubTopicArn}
-      queueTopicArn: ${self:custom.queueTopicArn}
+    environment: ${self:custom.env}
   slackNotifications:
     handler: handler.slackNotifications
     events:
       - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.queueTopic}
       - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.githubTopic}
-    environment:
-      dynamoDBUserTableName: ${self:custom.dynamoDBUserTableName}
-      myRegion: ${opt:region, 'us-east-1'}
-      dynamoDBQueueTableName: ${self:custom.dynamoDBQueueTableName}
-      githubTopicArn: ${self:custom.githubTopicArn}
-      queueTopicArn: ${self:custom.queueTopicArn}
+    environment: ${self:custom.env}
   jenkinsTrigger:
     handler: handler.jenkinsTrigger
     events:
       - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.queueTopic}
-    environment:
-      myRegion: ${opt:region, 'us-east-1'}
-      ciUrl: ${env:CI_URL}
-      ciStatusUpdateUrl:
-        {
-          "Fn::Join":
-            [
-              "",
-              [
-                " https://",
-                { "Ref": "ApiGatewayRestApi" },
-                ".execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}/ci/statusUpdate",
-              ],
-            ],
-        }
+    environment: ${self:custom.env}
   ciStatusUpdate:
     handler: handler.ciStatusUpdate
     events:
@@ -196,6 +188,4 @@ functions:
           path: ci/statusUpdate
           method: post
           integration: lambda
-    environment:
-      myRegion: ${opt:region, 'us-east-1'}
-      ciTopicArn: ${self:custom.ciTopicArn}
+    environment: ${self:custom.env}
