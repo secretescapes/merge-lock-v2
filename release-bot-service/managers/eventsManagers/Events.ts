@@ -39,3 +39,30 @@ export type PrEvent = {
     login: string;
   };
 };
+
+export class CiEvent {
+  state:
+    | "START"
+    | "FAILURE_MERGE"
+    | "START_TEST"
+    | "FAILURE_TEST"
+    | "SUCCESS"
+    | "FAILURE_ABNORMAL";
+  branch: string;
+  url: string;
+
+  static isCiEvent(obj: any): obj is CiEvent {
+    return (
+      obj &&
+      typeof obj === "object" &&
+      typeof obj["branch"] === "string" &&
+      typeof obj["url"] === "string" &&
+      (obj["state"] === "START" ||
+        obj["state"] === "FAILURE_MERGE" ||
+        obj["state"] === "START_TEST" ||
+        obj["state"] === "FAILURE_TEST" ||
+        obj["state"] === "SUCCESS" ||
+        obj["state"] === "FAILURE_ABNORMAL")
+    );
+  }
+}

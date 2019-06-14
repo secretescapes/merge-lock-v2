@@ -8,13 +8,14 @@ export class EventsManager {
   }
   protected async publish(message: string) {
     try {
+      console.info(`Trying to publish message in ${this.topic}`);
       await this.sns
         .publish({
           Message: message,
           TopicArn: this.topic
         })
         .promise();
-      console.info(`message published in ${this.topic}`);
+      console.info(`Message published`);
     } catch (err) {
       console.error(err);
       throw new Error("Error publishing event");

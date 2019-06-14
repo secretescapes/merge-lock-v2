@@ -6,9 +6,11 @@ import { Command, CommandResult } from "./commands/Command";
 import { SlackCommandFactory } from "./commands/commandFactories/SlackCommandFactory";
 import { GithubCommandFactory } from "./commands/commandFactories/GithubCommandFactory";
 import { CommandFactory } from "./commands/commandFactories/CommandFactory";
-import { REGION, COMMAND_TOPIC } from "./environment";
+import { REGION, COMMAND_TOPIC, CI_TOPIC } from "./environment";
 import { NotificationCommandFactory } from "./commands/commandFactories/NotificationCommandFactory";
 import { JenkinsCommandFactory } from "./commands/commandFactories/JenkinsCommandFactory";
+import { CiEventsManager } from "./managers/eventsManagers/CiEventsManager";
+import { CiEvent } from "./managers/eventsManagers/Events";
 
 module.exports.server = async event => {
   console.log(JSON.stringify(event));
@@ -54,6 +56,19 @@ module.exports.jenkinsTrigger = async event => {
   await Promise.all(
     messages.map(getProcessFunction(new JenkinsCommandFactory()))
   );
+  return;
+};
+
+module.exports.ciStatusUpdate = async event => {
+  console.log(JSON.stringify(event));
+  const ciEvent = event.body;
+  if (!CiEvent.isCiEvent(ciEvent)) {
+    console.error(`Unkown event received from CI: ${JSON.stringify(ciEvent)}`);
+    return;
+  }
+  console.log(`Sending notification to CI topic...`);
+  await new CiEventsManager().publishEvent(ciEvent);
+  console.log(`Notification sent`);
   return;
 };
 

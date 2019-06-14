@@ -92,6 +92,19 @@ custom:
             ],
           ],
       }
+  ciTopic: "${self:service}-${self:provider.stage}-ci"
+  ciTopicArn:
+    {
+      "Fn::Join":
+        [
+          "",
+          [
+            "arn:aws:sns:${self:provider.region}:",
+            { "Ref": "AWS::AccountId" },
+            ":${self:custom.ciTopic}",
+          ],
+        ],
+    }
 
 provider:
   profile: release-bot
@@ -120,6 +133,10 @@ resources: # CloudFormation template syntax
       Type: AWS::SNS::Topic
       Properties:
         TopicName: ${self:custom.githubTopic}
+    ciTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:custom.ciTopic}
     userEventsDynamoDbTable:
       Type: "AWS::DynamoDB::Table"
       DeletionPolicy: Retain
@@ -199,3 +216,25 @@ functions:
     environment:
       myRegion: ${opt:region, 'us-east-1'}
       ciUrl: ${env:CI_URL}
+      ciStatusUpdateUrl:
+        {
+          "Fn::Join":
+            [
+              "",
+              [
+                " https://",
+                { "Ref": "ApiGatewayRestApi" },
+                ".execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}/ci/statusUpdate",
+              ],
+            ],
+        }
+  ciStatusUpdate:
+    handler: handler.ciStatusUpdate
+    events:
+      - http:
+          path: ci/statusUpdate
+          method: post
+          integration: lambda
+    environment:
+      myRegion: ${opt:region, 'us-east-1'}
+      ciTopicArn: ${self:custom.ciTopicArn}
