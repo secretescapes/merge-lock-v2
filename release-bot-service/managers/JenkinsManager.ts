@@ -1,14 +1,20 @@
+import { CI_URL } from "../environment";
+
 const axios = require("axios");
-const FormData = require("form-data");
+
 export class JenkinsManager {
   async triggerPipelineInBranch(branch: string) {
-    const data = new FormData();
-    data.append("BRANCH_TO_MERGE", branch);
-    await axios.post(
-      `http://jenkins.secretescapes.com:9090/buildByToken/buildWithParameters?token=${"IB8beAjMKx1hAfuj6pL6mO0XPWSrzMG2vYM6VdejRBrQMFicvNIrCG2TYSDKkici"}&job=merge-to-master`,
-      data,
-      { headers: { "Content-Type": "multipart/form-data" } }
+    const response = await axios.post(
+      CI_URL,
+      encodeForm({ BRANCH_TO_MERGE: branch }),
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
     );
-    console.info("Request to jenkins sent");
+    console.info(`Request to jenkins sent ${JSON.stringify(response.data)}`);
   }
 }
+
+const encodeForm = data => {
+  return Object.keys(data)
+    .map(key => encodeURIComponent(key) + "=" + encodeURIComponent(data[key]))
+    .join("&");
+};

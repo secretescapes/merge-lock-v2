@@ -9,6 +9,7 @@ export class JenkinsQueueChangedCommand extends QueueChangedCommand {
         .getReleaseSlots()[0]
         .getBranch();
       try {
+        console.log(`Triggering pipeline in branch ${branchAtTop}`);
         await new JenkinsManager().triggerPipelineInBranch(branchAtTop);
       } catch (err) {
         console.error(`Error sending request to Jenkins ${err}`);

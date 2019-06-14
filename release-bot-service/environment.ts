@@ -4,4 +4,4 @@ export const QUEUES_TABLE_NAME = process.env.dynamoDBQueueTableName || "";
 export const USERS_TABLE_NAME = process.env.dynamoDBUserTableName || "";
 export const COMMAND_TOPIC = process.env.commandTopicArn || "";
 export const QUEUE_TOPIC = process.env.queueTopicArn || "";
-process.env.slackIncomingWebhookUrl || "";
+export const CI_URL = process.env.ciUrl || "";

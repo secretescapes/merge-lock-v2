@@ -1,7 +1,7 @@
 service: release-bot-service
 
 # Requires a .env file with the following variables:
-#   SLACK_INCOMING_WEBHOOK_URL
+#   CI_URL
 
 plugins:
   - serverless-pseudo-parameters
@@ -198,3 +198,4 @@ functions:
       - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.queueTopic}
     environment:
       myRegion: ${opt:region, 'us-east-1'}
+      ciUrl: ${env:CI_URL}
