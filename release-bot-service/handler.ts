@@ -8,9 +8,9 @@ import { GithubCommandFactory } from "./commands/commandFactories/GithubCommandF
 import { CommandFactory } from "./commands/commandFactories/CommandFactory";
 import { REGION, COMMAND_TOPIC, CI_TOPIC } from "./environment";
 import { NotificationCommandFactory } from "./commands/commandFactories/NotificationCommandFactory";
-import { JenkinsCommandFactory } from "./commands/commandFactories/JenkinsCommandFactory";
+import { CICommandFactory } from "./commands/commandFactories/CICommandFactory";
 import { CiEventsManager } from "./managers/eventsManagers/CiEventsManager";
-import { CiEvent } from "./managers/eventsManagers/Events";
+import { CiUpdate } from "./managers/eventsManagers/Events";
 
 module.exports.server = async event => {
   console.log(JSON.stringify(event));
@@ -53,21 +53,23 @@ module.exports.slackNotifications = async event => {
 module.exports.jenkinsTrigger = async event => {
   console.log(JSON.stringify(event));
   const messages = event.Records.map(record => JSON.parse(record.Sns.Message));
-  await Promise.all(
-    messages.map(getProcessFunction(new JenkinsCommandFactory()))
-  );
+  await Promise.all(messages.map(getProcessFunction(new CICommandFactory())));
   return;
 };
 
 module.exports.ciStatusUpdate = async event => {
   console.log(JSON.stringify(event));
-  const ciEvent = event.body;
-  if (!CiEvent.isCiEvent(ciEvent)) {
-    console.error(`Unkown event received from CI: ${JSON.stringify(ciEvent)}`);
+  const ciUpdate = event.body;
+  if (!CiUpdate.isCiUpdate(ciUpdate)) {
+    console.error(`Unkown event received from CI: ${JSON.stringify(ciUpdate)}`);
     return;
   }
   console.log(`Sending notification to CI topic...`);
-  await new CiEventsManager().publishEvent(ciEvent);
+  await new CiEventsManager().publishEvent({
+    eventType: ciUpdate.state,
+    branch: ciUpdate.branch,
+    url: ciUpdate.url
+  });
   console.log(`Notification sent`);
   return;
 };

@@ -2,6 +2,8 @@ export class CommandResult {
   success: boolean;
   reason?: string;
   result: string;
+
+  static SUCCESS: CommandResult = { success: true, result: "" };
 }
 export abstract class Command {
   async execute(): Promise<CommandResult> {

@@ -173,6 +173,7 @@ functions:
     events:
       - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.queueTopic}
       - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.githubTopic}
+      - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.ciTopic}
     environment: ${self:custom.env}
   jenkinsTrigger:
     handler: handler.jenkinsTrigger

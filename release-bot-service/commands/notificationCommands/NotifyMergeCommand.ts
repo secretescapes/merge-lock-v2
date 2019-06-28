@@ -1,7 +1,6 @@
 import { Command, CommandResult } from "../Command";
 import { GithubMergeEvent } from "../../managers/eventsManagers/Events";
 import { DynamoDBUserManager } from "../../managers/dynamoDBManagers/DynamoDBUserManager";
-import { USERS_TABLE_NAME, REGION, QUEUES_TABLE_NAME } from "../../environment";
 import { SlackUser } from "../../Queues";
 import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
 import { ResponseManager } from "../../managers/ResponseManager";
@@ -47,7 +46,7 @@ export class NotifyMergeCommand extends Command {
       }`
     );
 
-    return { success: true, result: "" };
+    return CommandResult.SUCCESS;
   }
   protected validate(): string | true {
     return true;

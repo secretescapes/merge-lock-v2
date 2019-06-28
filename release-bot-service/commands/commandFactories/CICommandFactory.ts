@@ -1,12 +1,12 @@
 import { CommandFactory } from "./CommandFactory";
 import { Command } from "../Command";
-import { JenkinsQueueChangedCommand } from "../jenkinsCommands/JenkinsQueueChangedCommand";
+import { CIQueueChangedCommand } from "../CICommands/CIQueueChangedCommand";
 
-export class JenkinsCommandFactory implements CommandFactory {
+export class CICommandFactory implements CommandFactory {
   async buildCommand(input: any): Promise<Command> {
     switch (input.eventType) {
       case "QUEUE_CHANGED":
-        return new JenkinsQueueChangedCommand(
+        return new CIQueueChangedCommand(
           input.channel,
           input.before,
           input.after

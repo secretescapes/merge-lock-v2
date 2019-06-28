@@ -1,8 +1,8 @@
 import { QueueChangedCommand } from "../QueueChangedCommand";
 import { CommandResult } from "../Command";
-import { JenkinsManager } from "../../managers/JenkinsManager";
+import { CiManager } from "../../managers/CiManager";
 
-export class JenkinsQueueChangedCommand extends QueueChangedCommand {
+export class CIQueueChangedCommand extends QueueChangedCommand {
   protected async executeCmd(): Promise<CommandResult> {
     if (this.isNewTop()) {
       const branchAtTop = this.getAfterQueue()
@@ -10,7 +10,7 @@ export class JenkinsQueueChangedCommand extends QueueChangedCommand {
         .getBranch();
       try {
         console.log(`Triggering pipeline in branch ${branchAtTop}`);
-        await new JenkinsManager().triggerPipelineInBranch(
+        await new CiManager().triggerPipelineInBranch(
           branchAtTop,
           this.channelStr
         );

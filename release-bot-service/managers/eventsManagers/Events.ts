@@ -1,22 +1,55 @@
-export type Event = GithubMergeEvent | QueueChangedEvent;
+export abstract class Event {
+  eventType: String;
 
-export type GithubMergeEvent = {
+  static isGithubMergeEvent(obj: Event): obj is GithubMergeEvent {
+    return obj && typeof obj === "object" && obj.eventType === "MERGE";
+  }
+  static isCIEvent(obj: Event): obj is CIEvent {
+    return (
+      obj &&
+      typeof obj === "object" &&
+      (obj.eventType === "START" ||
+        obj.eventType === "FAILURE_MERGE" ||
+        obj.eventType === "START_TEST" ||
+        obj.eventType === "FAILURE_TEST" ||
+        obj.eventType === "SUCCESS" ||
+        obj.eventType === "FAILURE_ABNORMAL")
+    );
+  }
+
+  static isQueueChangedEvent(obj: Event): obj is QueueChangedEvent {
+    return obj && typeof obj === "object" && obj.eventType === "QUEUE_CHANGED";
+  }
+}
+
+export class CIEvent extends Event {
+  eventType:
+    | "START"
+    | "FAILURE_MERGE"
+    | "START_TEST"
+    | "FAILURE_TEST"
+    | "SUCCESS"
+    | "FAILURE_ABNORMAL";
+  branch: string;
+  url: string;
+}
+export class GithubMergeEvent extends Event {
   eventType: "MERGE";
   pullRequestTitle: string;
   pullRequestUrl: string;
   branchName: string;
   repoName: string;
   mergedBy: string;
-};
+}
 
-//TODO: Move somewhere else
-export type QueueChangedEvent = {
+export class QueueChangedEvent extends Event {
   eventType: "QUEUE_CHANGED";
   channel: string;
   before: string;
   after: string;
-};
+}
 
+// External  Event (Github)
 export type PrEvent = {
   action: "opened" | "closed";
   number: number;
@@ -40,7 +73,8 @@ export type PrEvent = {
   };
 };
 
-export class CiEvent {
+// External  Event (CI)
+export class CiUpdate {
   state:
     | "START"
     | "FAILURE_MERGE"
@@ -51,7 +85,7 @@ export class CiEvent {
   branch: string;
   url: string;
 
-  static isCiEvent(obj: any): obj is CiEvent {
+  static isCiUpdate(obj: any): obj is CiUpdate {
     return (
       obj &&
       typeof obj === "object" &&

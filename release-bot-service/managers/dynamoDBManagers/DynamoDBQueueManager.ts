@@ -34,6 +34,18 @@ export class DynamoDBQueueManager extends DynamoDBManager {
     return response.Item.slackWebhook.S;
   }
 
+  async getWebhookForBranch(branch: string): Promise<string | null> {
+    const response = await this.retrieveQueueDataForBranch(branch);
+    try {
+      if (response.Items.length > 0) {
+        return response.Items[0].slackWebhook.S;
+      }
+    } catch (err) {
+      console.error(`Error scanning DB ${err}`);
+    }
+    return null;
+  }
+
   async getChannelAndWebhookByRepository(
     repo: string
   ): Promise<[SlackChannel, string] | null> {
@@ -135,6 +147,20 @@ export class DynamoDBQueueManager extends DynamoDBManager {
           }
         },
         FilterExpression: "repository = :repo",
+        TableName: this.tableName
+      })
+      .promise();
+  }
+
+  private async retrieveQueueDataForBranch(branch: string): Promise<any> {
+    return await this.dynamodb
+      .scan({
+        ExpressionAttributeValues: {
+          ":branch": {
+            S: branch
+          }
+        },
+        FilterExpression: "contains (queue, :branch)",
         TableName: this.tableName
       })
       .promise();

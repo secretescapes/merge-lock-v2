@@ -3,7 +3,7 @@ import { DynamoDBQueueManager } from "./dynamoDBManagers/DynamoDBQueueManager";
 
 const axios = require("axios");
 
-export class JenkinsManager {
+export class CiManager {
   async triggerPipelineInBranch(branch: string, channel: string) {
     const ciUrlForChannel = await new DynamoDBQueueManager().getCiUrlForChannel(
       channel
