@@ -1,0 +1,26 @@
+{
+  "name": "release-queue-v2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/secretescapes/merge-lock-v2.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/secretescapes/merge-lock-v2/issues"
+  },
+  "homepage": "https://github.com/secretescapes/merge-lock-v2#readme",
+  "devDependencies": {
+    "axios": "^0.19.0",
+    "chai": "^4.2.0",
+    "mocha": "^6.1.4",
+    "uuid": "^3.3.2"
+  },
+  "dependencies": {}
+}
