@@ -2,16 +2,19 @@ const chai = require("chai");
 const axios = require("axios");
 const expect = chai.expect;
 const uuidv1 = require("uuid/v1");
+require("dotenv").config();
 describe("Slack Release Bot", function() {
   describe("list queue", function() {
     it("If there is no queue, returns the proper message", async () => {
       const testId = uuidv1();
       //when: list
       let response = await axios.post(
-        "https://ey9r6pxe20.execute-api.us-east-1.amazonaws.com/test/slack/dispatcher",
+        `${process.env.TEST_APP_URL}/slack/dispatcher`,
         {
           text: "list",
-          response_url: `https://0tx8rkovb0.execute-api.us-east-1.amazonaws.com/dev/responses/post?id=${testId}`
+          response_url: `${
+            process.env.RESPONSES_APP_URL
+          }/responses/post?id=${testId}`
         }
       );
 
@@ -21,7 +24,7 @@ describe("Slack Release Bot", function() {
 
       //and: a response is sent to the proper URL
       response = await axios.get(
-        `https://0tx8rkovb0.execute-api.us-east-1.amazonaws.com/dev/responses/retrieve/${testId}`
+        `${process.env.RESPONSES_APP_URL}/responses/retrieve/${testId}`
       );
       const responses = JSON.parse(response.data.body);
       expect(responses.length).to.equal(1);
