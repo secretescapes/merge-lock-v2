@@ -1,7 +1,5 @@
 service: release-bot-service
 
-# Requires a .env file with the following variables:
-
 plugins:
   - serverless-pseudo-parameters
   - serverless-plugin-typescript
