@@ -5,8 +5,7 @@ service: release-bot-service
 plugins:
   - serverless-pseudo-parameters
   - serverless-plugin-typescript
-  - serverless-dotenv-plugin
-
+  - serverless-local-schedule
 custom:
   dynamoDBUserTableName: ${self:service}-users-${self:provider.stage}
   dynamoDBQueueTableName: ${self:service}-queues-${self:provider.stage}
@@ -187,4 +186,11 @@ functions:
           path: ci/statusUpdate
           method: post
           integration: lambda
+    environment: ${self:custom.env}
+  releaseWindowOpenClose:
+    handler: handler.releaseWindowOpenClose
+    events:
+      - schedule:
+          rate: cron(0 * * * ? *)
+          timezone: Europe/London
     environment: ${self:custom.env}

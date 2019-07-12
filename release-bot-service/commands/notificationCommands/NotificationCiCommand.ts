@@ -6,7 +6,7 @@ import {
   SlackRichResponse
 } from "../../managers/ResponseManager";
 
-export class CiNotificationCommand extends Command {
+export class NotificationCiCommand extends Command {
   private event: CIEvent;
 
   constructor(event: CIEvent) {

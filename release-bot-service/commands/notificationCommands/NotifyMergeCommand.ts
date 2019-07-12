@@ -4,33 +4,7 @@ import { DynamoDBUserManager } from "../../managers/dynamoDBManagers/DynamoDBUse
 import { SlackUser } from "../../Queues";
 import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
 import { ResponseManager } from "../../managers/ResponseManager";
-import * as moment from "moment-timezone";
-
-type ReleaseWindowDefinition = {
-  timezone: string;
-  // Sunday: 0 Saturday: 6
-  day: {
-    start: number;
-    end: number;
-  };
-  // 0 - 23
-  hour: {
-    start: number;
-    end: number;
-  };
-};
-
-const DEFAULT_RELEASE_WINDOW_DEF: ReleaseWindowDefinition = {
-  timezone: "Europe/London",
-  day: {
-    start: 1, // Monday
-    end: 4 //Thursday
-  },
-  hour: {
-    start: 9,
-    end: 16
-  }
-};
+import { ReleaseWindow } from "../../ReleaseWindow";
 
 export class NotifyMergeCommand extends Command {
   githubMergeEvent: GithubMergeEvent;
@@ -66,7 +40,7 @@ export class NotifyMergeCommand extends Command {
       )) || this.githubMergeEvent.mergedBy;
     console.log(`user: ${mergedByUser}`);
 
-    const msg = this.isReleaseWindowOpen()
+    const msg = ReleaseWindow.getDefaultReleaseWindow().isReleaseWindowOpen()
       ? `${mergedByUser.toString()} has merged branch ${
           this.githubMergeEvent.branchName
         }`
@@ -79,26 +53,5 @@ export class NotifyMergeCommand extends Command {
   }
   protected validate(): string | true {
     return true;
-  }
-
-  private isReleaseWindowOpen(
-    releaseWindowDefinition: ReleaseWindowDefinition = DEFAULT_RELEASE_WINDOW_DEF
-  ): boolean {
-    const now = moment().tz(releaseWindowDefinition.timezone);
-    console.log(
-      `Checking release window open Day: ${now.day()} Hour: ${now.hour()}`
-    );
-    if (
-      now.day() >= releaseWindowDefinition.day.start &&
-      now.day() <= releaseWindowDefinition.day.end
-    ) {
-      if (
-        now.hour() >= releaseWindowDefinition.hour.start &&
-        now.hour() <= releaseWindowDefinition.hour.end
-      ) {
-        return true;
-      }
-    }
-    return false;
   }
 }

@@ -11,6 +11,10 @@ import { NotificationCommandFactory } from "./commands/commandFactories/Notifica
 import { CICommandFactory } from "./commands/commandFactories/CICommandFactory";
 import { CiEventsManager } from "./managers/eventsManagers/CiEventsManager";
 import { CiUpdate } from "./managers/eventsManagers/Events";
+import { ReleaseWindow } from "./ReleaseWindow";
+import { DynamoDBManager } from "./managers/dynamoDBManagers/DynamoDBManager";
+import { DynamoDBQueueManager } from "./managers/dynamoDBManagers/DynamoDBQueueManager";
+import { QueueEventsManager } from "./managers/eventsManagers/QueueEventsManager";
 
 module.exports.server = async event => {
   console.log(JSON.stringify(event));
@@ -72,6 +76,33 @@ module.exports.ciStatusUpdate = async event => {
   });
   console.log(`Notification sent`);
   return;
+};
+
+module.exports.releaseWindowOpenClose = async event => {
+  console.log(JSON.stringify(event));
+  const allChannels = await new DynamoDBQueueManager().getAllQueuesChannels();
+  const queueEventsManager = new QueueEventsManager();
+
+  allChannels
+    .map(channel => channel.toString())
+    .forEach(async channelStr => {
+      const isReleaseWindowOpening = ReleaseWindow.getDefaultReleaseWindow().isReleaseWindowOpening();
+      console.log(`${channelStr} is opening? ${isReleaseWindowOpening}`);
+      if (isReleaseWindowOpening) {
+        await queueEventsManager.publishEvent({
+          eventType: "WINDOW_OPEN",
+          channel: channelStr
+        });
+      }
+      const isReleaseWindowClosing = ReleaseWindow.getDefaultReleaseWindow().isReleaseWindowClosing();
+      console.log(`${channelStr} is closing? ${isReleaseWindowClosing}`);
+      if (isReleaseWindowClosing) {
+        await queueEventsManager.publishEvent({
+          eventType: "WINDOW_CLOSED",
+          channel: channelStr
+        });
+      }
+    });
 };
 
 function getProcessFunction(

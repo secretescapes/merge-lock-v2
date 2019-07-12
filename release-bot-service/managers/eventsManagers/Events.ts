@@ -20,6 +20,18 @@ export abstract class Event {
   static isQueueChangedEvent(obj: Event): obj is QueueChangedEvent {
     return obj && typeof obj === "object" && obj.eventType === "QUEUE_CHANGED";
   }
+
+  static isQueueReleaseWindowChanged(
+    obj: Event
+  ): obj is QueueReleaseWindowChanged {
+    return (
+      obj &&
+      typeof obj === "object" &&
+      typeof obj["channel"] === "string" &&
+      (obj["eventType"] === "WINDOW_CLOSED" ||
+        obj["eventType"] === "WINDOW_OPEN")
+    );
+  }
 }
 
 export class CIEvent extends Event {
@@ -47,6 +59,20 @@ export class QueueChangedEvent extends Event {
   channel: string;
   before: string;
   after: string;
+}
+
+export class QueueReleaseWindowChanged extends Event {
+  eventType: "WINDOW_OPEN" | "WINDOW_CLOSED";
+  channel: string;
+}
+export class QueueReleaseWindowOpen extends QueueReleaseWindowChanged {
+  eventType: "WINDOW_OPEN";
+  channel: string;
+}
+
+export class QueueReleaseWindowClosed extends QueueReleaseWindowChanged {
+  eventType: "WINDOW_CLOSED";
+  channel: string;
 }
 
 // External  Event (Github)

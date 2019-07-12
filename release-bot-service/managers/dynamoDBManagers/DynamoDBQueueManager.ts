@@ -66,6 +66,23 @@ export class DynamoDBQueueManager extends DynamoDBManager {
     return null;
   }
 
+  async getAllQueuesChannels(): Promise<SlackChannel[]> {
+    console.log(`Searching all queues channels`);
+    try {
+      const response = await this.retrieveAllQueuesData();
+
+      if (response.Items.length > 0) {
+        return response.Items.map(item =>
+          SlackChannel.parseFromString(item["channel"]["S"])
+        );
+      }
+    } catch (err) {
+      console.error(`Error retrieving queue channels: ${err}`);
+    }
+
+    return [];
+  }
+
   async getChannelByRepository(repo: string): Promise<SlackChannel | null> {
     console.log(`Searching queue by repo [${repo}]`);
     const slackChannelAndWebhook:
@@ -161,6 +178,14 @@ export class DynamoDBQueueManager extends DynamoDBManager {
           }
         },
         FilterExpression: "contains (queue, :branch)",
+        TableName: this.tableName
+      })
+      .promise();
+  }
+
+  private async retrieveAllQueuesData(): Promise<any> {
+    return await this.dynamodb
+      .scan({
         TableName: this.tableName
       })
       .promise();

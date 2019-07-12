@@ -1,4 +1,4 @@
-import { QueueChangedCommand } from "../QueueChangedCommand";
+import { QueueChangedCommand } from "../notificationCommands/QueueChangedCommand";
 import { CommandResult } from "../Command";
 import { CiManager } from "../../managers/CiManager";
 

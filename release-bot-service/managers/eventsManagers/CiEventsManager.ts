@@ -1,6 +1,6 @@
 import { EventsManager } from "./EventsManager";
 import { CI_TOPIC, REGION } from "../../environment";
-import { CiUpdate, CIEvent } from "./Events";
+import { CIEvent } from "./Events";
 
 export class CiEventsManager extends EventsManager {
   constructor() {

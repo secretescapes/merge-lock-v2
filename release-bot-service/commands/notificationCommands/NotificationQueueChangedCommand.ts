@@ -3,8 +3,7 @@ import { Queue } from "../../Queues";
 import { ResponseManager } from "../../managers/ResponseManager";
 import { SlackFormatter } from "../../Formatter";
 import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
-import { QUEUES_TABLE_NAME, REGION } from "../../environment";
-import { QueueChangedCommand } from "../QueueChangedCommand";
+import { QueueChangedCommand } from "./QueueChangedCommand";
 
 export class NotificationQueueChangedCommand extends QueueChangedCommand {
   protected async executeCmd(): Promise<CommandResult> {

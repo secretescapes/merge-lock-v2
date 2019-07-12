@@ -1,5 +1,5 @@
-import { Command } from "./Command";
-import { Queue } from "../Queues";
+import { Command } from "../Command";
+import { Queue } from "../../Queues";
 
 export abstract class QueueChangedCommand extends Command {
   queueStrBefore: string;
