@@ -5,6 +5,7 @@ import {
   ResponseManager,
   SlackRichResponse
 } from "../../managers/ResponseManager";
+import { msg } from "../../Messages";
 
 export class NotificationCiCommand extends Command {
   private event: CIEvent;
@@ -37,49 +38,49 @@ export class NotificationCiCommand extends Command {
   }
 
   private getMessageForEvent(slackWebhook: string): SlackRichResponse {
-    const title = `:lock: <${this.event.url}|${this.event.branch}>`;
+    const title = msg`ci.messages.title ${this.event.url} ${this.event.branch}`;
     const url = slackWebhook;
     switch (this.event.eventType) {
       case "START":
         return {
           title,
           url,
-          text: `Merging master`,
+          text: msg`ci.merging.master`,
           color: null
         };
       case "FAILURE_MERGE":
         return {
           title,
           url,
-          text: `Conflicts with master`,
+          text: msg`ci.conflicts.merging.master`,
           color: "danger"
         };
       case "START_TEST":
         return {
           url,
           title,
-          text: `Merge successful`,
+          text: msg`ci.tests.start`,
           color: "good"
         };
       case "FAILURE_TEST":
         return {
           url,
           title,
-          text: `Test failures`,
+          text: msg`ci.tests.failures`,
           color: "danger"
         };
       case "FAILURE_ABNORMAL":
         return {
           url,
           title,
-          text: `Abnormal failure`,
+          text: msg`ci.failure.abnormal`,
           color: "danger"
         };
       case "SUCCESS":
         return {
           url,
           title,
-          text: `Tests successful`,
+          text: msg`ci.tests.success`,
           color: "good"
         };
     }

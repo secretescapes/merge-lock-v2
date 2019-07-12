@@ -5,6 +5,7 @@ import { SlackUser } from "../../Queues";
 import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
 import { ResponseManager } from "../../managers/ResponseManager";
 import { ReleaseWindow } from "../../ReleaseWindow";
+import { msg } from "../../Messages";
 
 export class NotifyMergeCommand extends Command {
   githubMergeEvent: GithubMergeEvent;
@@ -40,14 +41,14 @@ export class NotifyMergeCommand extends Command {
       )) || this.githubMergeEvent.mergedBy;
     console.log(`user: ${mergedByUser}`);
 
-    const msg = ReleaseWindow.getDefaultReleaseWindow().isReleaseWindowOpen()
-      ? `${mergedByUser.toString()} has merged branch ${
+    const message = ReleaseWindow.getDefaultReleaseWindow().isReleaseWindowOpen()
+      ? msg`someone.has.merged ${mergedByUser.toString()} ${
           this.githubMergeEvent.branchName
         }`
-      : `${mergedByUser.toString()} has merged branch ${
+      : msg`someone.has.merged.window.closed ${mergedByUser.toString()} ${
           this.githubMergeEvent.branchName
-        } when the release window is closed`;
-    await new ResponseManager().postResponse(slackWebhook, msg);
+        }`;
+    await new ResponseManager().postResponse(slackWebhook, message);
 
     return CommandResult.SUCCESS;
   }
