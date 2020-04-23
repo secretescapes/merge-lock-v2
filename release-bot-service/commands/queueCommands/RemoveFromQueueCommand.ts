@@ -1,8 +1,7 @@
 import { Command, CommandResult } from "../Command";
 import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
-import { DynamoDBReleaseQueue, ReleaseSlot, SlackChannel } from "../../Queues";
+import { DynamoDBReleaseQueue, SlackChannel } from "../../Queues";
 import { SlackFormatter } from "../../Formatter";
-import { QUEUES_TABLE_NAME, REGION } from "../../environment";
 
 export class RemoveFromQueueCommand extends Command {
   private branch: string | null;
@@ -29,13 +28,13 @@ export class RemoveFromQueueCommand extends Command {
         success: true,
         result: `Removed, here is the queue:\n${new SlackFormatter().format(
           newQueue
-        )}`
+        )}`,
       };
     } catch (err) {
       console.error(`Error removing from the Queue ${this.channel}: ${err}`);
       return {
         success: false,
-        result: `Error removing from Queue ${this.channel}`
+        result: `Error removing from Queue ${this.channel}`,
       };
     }
   }

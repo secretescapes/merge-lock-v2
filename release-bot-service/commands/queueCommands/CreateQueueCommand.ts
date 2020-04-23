@@ -1,7 +1,6 @@
 import { SlackChannel } from "../../Queues";
 import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
 import { Command, CommandResult } from "../Command";
-import { QUEUES_TABLE_NAME, REGION } from "../../environment";
 export class CreateQueueCommand extends Command {
   private channel: SlackChannel;
   private repository: string | null;
@@ -42,7 +41,7 @@ export class CreateQueueCommand extends Command {
       if (err.toString().indexOf("QueryAlreadyExists") > -1) {
         return {
           success: false,
-          result: `There is already a queue on this channel`
+          result: `There is already a queue on this channel`,
         };
       }
       return { success: false, result: `Error creating queue` };

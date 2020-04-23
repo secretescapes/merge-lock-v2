@@ -12,14 +12,13 @@ import { CICommandFactory } from "./commands/commandFactories/CICommandFactory";
 import { CiEventsManager } from "./managers/eventsManagers/CiEventsManager";
 import { CiUpdate } from "./managers/eventsManagers/Events";
 import { ReleaseWindow } from "./ReleaseWindow";
-import { DynamoDBManager } from "./managers/dynamoDBManagers/DynamoDBManager";
 import { DynamoDBQueueManager } from "./managers/dynamoDBManagers/DynamoDBQueueManager";
 import { QueueEventsManager } from "./managers/eventsManagers/QueueEventsManager";
 
-module.exports.server = async event => {
+module.exports.server = async (event) => {
   console.log(JSON.stringify(event));
   const messages = event.Records.map(
-    record => JSON.parse(record.Sns.Message).body
+    (record) => JSON.parse(record.Sns.Message).body
   );
   await Promise.all(
     messages.map(getProcessFunction(new SlackCommandFactory()))
@@ -27,13 +26,13 @@ module.exports.server = async event => {
   return;
 };
 
-module.exports.github = async event => {
+module.exports.github = async (event) => {
   console.log(JSON.stringify(event));
-  await getProcessFunction(new GithubCommandFactory())(event.body.body);
+  await getProcessFunction(new GithubCommandFactory())(event.body);
   return;
 };
 
-module.exports.dispatcher = async event => {
+module.exports.dispatcher = async (event) => {
   console.log(JSON.stringify(event));
   try {
     await new CommandEventsManager(REGION, COMMAND_TOPIC).publishEvent(
@@ -45,23 +44,27 @@ module.exports.dispatcher = async event => {
   return { text: "OK" };
 };
 
-module.exports.slackNotifications = async event => {
+module.exports.slackNotifications = async (event) => {
   console.log(JSON.stringify(event));
-  const messages = event.Records.map(record => JSON.parse(record.Sns.Message));
+  const messages = event.Records.map((record) =>
+    JSON.parse(record.Sns.Message)
+  );
   await Promise.all(
     messages.map(getProcessFunction(new NotificationCommandFactory()))
   );
   return;
 };
 
-module.exports.jenkinsTrigger = async event => {
+module.exports.jenkinsTrigger = async (event) => {
   console.log(JSON.stringify(event));
-  const messages = event.Records.map(record => JSON.parse(record.Sns.Message));
+  const messages = event.Records.map((record) =>
+    JSON.parse(record.Sns.Message)
+  );
   await Promise.all(messages.map(getProcessFunction(new CICommandFactory())));
   return;
 };
 
-module.exports.ciStatusUpdate = async event => {
+module.exports.ciStatusUpdate = async (event) => {
   console.log(JSON.stringify(event));
   const ciUpdate = event.body;
   if (!CiUpdate.isCiUpdate(ciUpdate)) {
@@ -72,26 +75,26 @@ module.exports.ciStatusUpdate = async event => {
   await new CiEventsManager().publishEvent({
     eventType: ciUpdate.state,
     branch: ciUpdate.branch,
-    url: ciUpdate.url
+    url: ciUpdate.url,
   });
   console.log(`Notification sent`);
   return;
 };
 
-module.exports.releaseWindowOpenClose = async event => {
+module.exports.releaseWindowOpenClose = async (event) => {
   console.log(JSON.stringify(event));
   const allChannels = await new DynamoDBQueueManager().getAllQueuesChannels();
   const queueEventsManager = new QueueEventsManager();
 
   allChannels
-    .map(channel => channel.toString())
-    .forEach(async channelStr => {
+    .map((channel) => channel.toString())
+    .forEach(async (channelStr) => {
       const isReleaseWindowOpening = ReleaseWindow.getDefaultReleaseWindow().isReleaseWindowOpening();
       console.log(`${channelStr} is opening? ${isReleaseWindowOpening}`);
       if (isReleaseWindowOpening) {
         await queueEventsManager.publishEvent({
           eventType: "WINDOW_OPEN",
-          channel: channelStr
+          channel: channelStr,
         });
       }
       const isReleaseWindowClosing = ReleaseWindow.getDefaultReleaseWindow().isReleaseWindowClosing();
@@ -99,7 +102,7 @@ module.exports.releaseWindowOpenClose = async event => {
       if (isReleaseWindowClosing) {
         await queueEventsManager.publishEvent({
           eventType: "WINDOW_CLOSED",
-          channel: channelStr
+          channel: channelStr,
         });
       }
     });

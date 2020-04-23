@@ -4,7 +4,6 @@ import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQu
 import { SlackChannel } from "../../Queues";
 import { GithubMergeCommand } from "../githubCommands/GithubMergeCommand";
 import { PrEvent } from "../../managers/eventsManagers/Events";
-import { REGION, QUEUES_TABLE_NAME } from "../../environment";
 
 export class GithubCommandFactory implements CommandFactory {
   async buildCommand(prEvent: PrEvent): Promise<Command> {

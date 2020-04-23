@@ -2,12 +2,11 @@ import {
   SlackUser,
   DynamoDBReleaseQueue,
   ReleaseSlot,
-  SlackChannel
+  SlackChannel,
 } from "../../Queues";
 import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
 import { SlackFormatter } from "../../Formatter";
 import { Command, CommandResult } from "../Command";
-import { QUEUES_TABLE_NAME, REGION } from "../../environment";
 export class addToQueueCommand extends Command {
   private user: SlackUser | null;
   private branch: string | null;
@@ -52,14 +51,14 @@ export class addToQueueCommand extends Command {
         success: true,
         result: `Added, here is the queue:\n${new SlackFormatter().format(
           newQueue
-        )}`
+        )}`,
       };
     } catch (err) {
       console.error(`Error adding to Queue ${this.channel}: ${err}`);
       //TODO: Check for validation errors
       return {
         success: false,
-        result: `Error adding to Queue ${this.channel}`
+        result: `Error adding to Queue ${this.channel}`,
       };
     }
   }

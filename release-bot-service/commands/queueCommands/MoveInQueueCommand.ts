@@ -1,7 +1,6 @@
 import { Command, CommandResult } from "../Command";
 import { SlackChannel, DynamoDBReleaseQueue } from "../../Queues";
 import { DynamoDBQueueManager } from "../../managers/dynamoDBManagers/DynamoDBQueueManager";
-import { QUEUES_TABLE_NAME, REGION } from "../../environment";
 import { SlackFormatter } from "../../Formatter";
 
 type BACK = "BACK";
@@ -41,7 +40,7 @@ export class MoveInQueueCommand extends Command {
         success: true,
         result: `Moved, here is the queue:\n${new SlackFormatter().format(
           newQueue
-        )}`
+        )}`,
       };
     } catch (err) {
       console.error(`Error moving in queue: ${err}`);
