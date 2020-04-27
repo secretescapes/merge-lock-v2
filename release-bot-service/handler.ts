@@ -6,7 +6,7 @@ import { Command, CommandResult } from "./commands/Command";
 import { SlackCommandFactory } from "./commands/commandFactories/SlackCommandFactory";
 import { GithubCommandFactory } from "./commands/commandFactories/GithubCommandFactory";
 import { CommandFactory } from "./commands/commandFactories/CommandFactory";
-import { REGION, COMMAND_TOPIC, CI_TOPIC } from "./environment";
+import { REGION, COMMAND_TOPIC } from "./environment";
 import { NotificationCommandFactory } from "./commands/commandFactories/NotificationCommandFactory";
 import { CICommandFactory } from "./commands/commandFactories/CICommandFactory";
 import { CiEventsManager } from "./managers/eventsManagers/CiEventsManager";
