@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "aws-sdk": "^2.361.0",
+    "aws-sdk": "^2.814.0",
     "serverless-local-schedule": "^0.1.6",
     "serverless-plugin-typescript": "^1.1.5",
     "ts-node": "^8.0.2"
